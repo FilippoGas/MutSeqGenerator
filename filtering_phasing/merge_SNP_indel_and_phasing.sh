@@ -1,8 +1,9 @@
-# Commands used to filter out variants with certain FILTER values out of vcf, concat SNP and INDEL file of each sample to obtain one file for each sample, and merge them all togheter to obtain one multisample
-# file to feed to SHAPEIT5 for phasing. Two directories are required containing SNP and INDEL files separately, and a txt file containing the suffinx of the files (sample names)
+# Commands used to filter variants with certain FILTER values out of vcf, concat SNP and INDEL file of each sample to obtain one file for each sample 
+# and merge them all togheter to obtain one multisample file to feed to SHAPEIT5 for phasing. 
+# Two directories are required containing SNP and INDEL files separately, and a txt file containing the suffix of the files (sample names)
 
-# select variants with PASS filter, do this for both SNP and INDEL files. (to execute from the directory containing all the vcf files. "indel_filtered" is the destination directory for filtered indel files and
-# complete_samples is the file containing all sample names/file suffix)
+# select variants with PASS filter, do this for both SNP and INDEL files. (to execute from the directory containing all the vcf files.
+# "indel_filtered" is the destination directory for filtered indel files and complete_samples is the file containing all sample names/file suffix)
 
 # for indels
 while IFS="" read -r p || [ -n "$p" ]; do ls | grep "$p" | xargs -I '{}' bcftools view -i 'FILTER="PASS" || FILTER="VQSRTrancheINDEL99.90to99.95" || FILTER="VQSRTrancheINDEL99.95to100.00"' '{}' > ../indel_filtered/"$p".indel.vcf ; done < ../complete_samples.txt

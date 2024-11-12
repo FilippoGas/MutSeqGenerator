@@ -1,0 +1,40 @@
+host: cibio-bcglab4
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 192
+Rules claiming more threads will be scaled down.
+Job stats:
+job                  count
+-----------------  -------
+sort_and_compress        2
+total                    2
+
+Select jobs to execute...
+Execute 2 jobs...
+
+[Tue Nov 12 16:09:03 2024]
+localrule sort_and_compress:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.indel.recalibrated_99.9.vcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/sorted_compressed_vcf/UVM.indel.vcf.gz
+    jobid: 0
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/sorted_compressed_vcf/UVM.indel.vcf.gz
+    wildcards: cancer_type=UVM, variant_type=indel
+    resources: tmpdir=/tmp
+
+
+[Tue Nov 12 16:09:03 2024]
+localrule sort_and_compress:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.snp.recalibrated_99.9.vcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/sorted_compressed_vcf/UVM.snp.vcf.gz
+    jobid: 1
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/sorted_compressed_vcf/UVM.snp.vcf.gz
+    wildcards: cancer_type=UVM, variant_type=snp
+    resources: tmpdir=/tmp
+
+[Tue Nov 12 16:09:24 2024]
+Finished job 1.
+1 of 2 steps (50%) done
+[Tue Nov 12 16:09:25 2024]
+Finished job 0.
+2 of 2 steps (100%) done
+Complete log: .snakemake/log/2024-11-12T160902.153781.snakemake.log

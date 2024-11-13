@@ -1,13 +1,9 @@
 # PATHS
 
-# Path to input vcf files
 input_vcf: "/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/{cancer_type}/vcf/{cancer_type}.{variant_type}.recalibrated_99.9.vcf"
-# Path to data folder
 data_folder: "/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm"
 
 # WILDCARDS
 
-# Variant types
 variant_types: ["snp", "indel"]
-# Cancer types
 cancer_types: ["UVM"]

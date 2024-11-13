@@ -1,0 +1,63 @@
+host: cibio-bcglab4
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 50
+Rules claiming more threads will be scaled down.
+Job stats:
+job                  count
+-----------------  -------
+all                      1
+concat                   1
+filter                   2
+index                    2
+index_phased_vcf        22
+phasing                 22
+sort_and_compress        2
+split_chromosomes       22
+total                   74
+
+Select jobs to execute...
+Execute 2 jobs...
+
+[Wed Nov 13 15:36:20 2024]
+localrule filter:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.indel.recalibrated_99.9.vcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/filtered_vcf/UVM.indel.vcf
+    jobid: 8
+    reason: Code has changed since last execution
+    wildcards: cancer_type=UVM, variant_type=indel
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 15:36:20 2024]
+localrule filter:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.snp.recalibrated_99.9.vcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/filtered_vcf/UVM.snp.vcf
+    jobid: 6
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/filtered_vcf/UVM.snp.vcf
+    wildcards: cancer_type=UVM, variant_type=snp
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 15:36:20 2024]
+Error in rule filter:
+    jobid: 8
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.indel.recalibrated_99.9.vcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/filtered_vcf/UVM.indel.vcf
+    shell:
+        if [/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.indel.recalibrated_99.9.vcf=~'indel']; then
+                bcftools view -i 'FILTER="PASS" || FILTER="VQSRTrancheINDEL99.90to99.95" || FILTER="VQSRTrancheINDEL99.95to100.00"' /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.indel.recalibrated_99.9.vcf > /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/filtered_vcf/UVM.indel.vcf
+            else
+                bcftools view -i 'FILTER="PASS" || FILTER="VQSRTrancheSNP99.90to99.95" || FILTER="VQSRTrancheSNP99.95to100.00"' /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/vcf/UVM.indel.recalibrated_99.9.vcf > /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/filtered_vcf/UVM.indel.vcf
+            fi
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Removing output files of failed job filter since they might be corrupted:
+/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/filtered_vcf/UVM.indel.vcf
+[Wed Nov 13 15:36:28 2024]
+Finished job 6.
+1 of 74 steps (1%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake/log/2024-11-13T153620.470542.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

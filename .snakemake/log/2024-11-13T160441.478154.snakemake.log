@@ -1,0 +1,248 @@
+host: cibio-bcglab4
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 50
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+all                     1
+index_phased_vcf       22
+phasing                22
+total                  45
+
+Select jobs to execute...
+Execute 22 jobs...
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr18.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr18.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf
+    jobid: 61
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf
+    wildcards: cancer_type=UVM, chr=18
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr3.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr3.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf
+    jobid: 16
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf
+    wildcards: cancer_type=UVM, chr=3
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr11.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr11.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf
+    jobid: 40
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf
+    wildcards: cancer_type=UVM, chr=11
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr19.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr19.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf
+    jobid: 64
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf
+    wildcards: cancer_type=UVM, chr=19
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr4.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr4.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf
+    jobid: 19
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf
+    wildcards: cancer_type=UVM, chr=4
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr12.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr12.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf
+    jobid: 43
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf
+    wildcards: cancer_type=UVM, chr=12
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr5.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr5.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf
+    jobid: 22
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf
+    wildcards: cancer_type=UVM, chr=5
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr20.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr20.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf
+    jobid: 67
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf
+    wildcards: cancer_type=UVM, chr=20
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr13.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr13.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf
+    jobid: 46
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf
+    wildcards: cancer_type=UVM, chr=13
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr6.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr6.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf
+    jobid: 25
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf
+    wildcards: cancer_type=UVM, chr=6
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr21.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr21.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf
+    jobid: 70
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf
+    wildcards: cancer_type=UVM, chr=21
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr14.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr14.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf
+    jobid: 49
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf
+    wildcards: cancer_type=UVM, chr=14
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr7.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr7.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf
+    jobid: 28
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf
+    wildcards: cancer_type=UVM, chr=7
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr22.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr22.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf
+    jobid: 73
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf
+    wildcards: cancer_type=UVM, chr=22
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr1.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr1.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf
+    jobid: 2
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf
+    wildcards: cancer_type=UVM, chr=1
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr15.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr15.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf
+    jobid: 52
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf
+    wildcards: cancer_type=UVM, chr=15
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr8.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr8.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf
+    jobid: 31
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf
+    wildcards: cancer_type=UVM, chr=8
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr16.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr16.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf
+    jobid: 55
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf
+    wildcards: cancer_type=UVM, chr=16
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr9.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr9.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf
+    jobid: 34
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf
+    wildcards: cancer_type=UVM, chr=9
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr2.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr2.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf
+    jobid: 13
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf
+    wildcards: cancer_type=UVM, chr=2
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr17.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr17.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf
+    jobid: 58
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf
+    wildcards: cancer_type=UVM, chr=17
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 16:04:41 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr10.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr10.b38.gmap.gz
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf
+    jobid: 37
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf
+    wildcards: cancer_type=UVM, chr=10
+    resources: tmpdir=/tmp
+
+Waiting at most 5 seconds for missing files.
+MissingOutputException in rule phasing in file /shares/CIBIO-Storage/BCG/scratch/fgastaldello/code/cvep-plm/snakefile, line 75:
+Job 40  completed successfully, but some output files are missing. Missing files after 5 seconds. This might be due to filesystem latency. If that is the case, consider to increase the wait time with --latency-wait:
+/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf (missing locally, parent dir contents: )
+Waiting at most 5 seconds for missing files.
+MissingOutputException in rule phasing in file /shares/CIBIO-Storage/BCG/scratch/fgastaldello/code/cvep-plm/snakefile, line 75:
+Job 19  completed successfully, but some output files are missing. Missing files after 5 seconds. This might be due to filesystem latency. If that is the case, consider to increase the wait time with --latency-wait:
+/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf (missing locally, parent dir contents: )
+Waiting at most 5 seconds for missing files.
+Terminating processes on user request, this might take some time.
+Complete log: .snakemake/log/2024-11-13T160441.478154.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

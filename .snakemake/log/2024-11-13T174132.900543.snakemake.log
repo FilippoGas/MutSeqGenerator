@@ -1,0 +1,437 @@
+host: cibio-bcglab4
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 50
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+all                     1
+index_phased_vcf       22
+total                  23
+
+Select jobs to execute...
+Execute 22 jobs...
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf.tbi
+    jobid: 33
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=7
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf.tbi
+    jobid: 93
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=22
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+
+Error in rule index_phased_vcf:
+    jobid: 33
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr7.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf.tbi
+    jobid: 29
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=6
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 93
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr22.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf.tbi
+    jobid: 89
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=21
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf.tbi
+    jobid: 25
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=5
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 29
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr6.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf.tbi
+    jobid: 85
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=20
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 89
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr21.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf.tbi
+    jobid: 21
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=4
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf.tbi
+    jobid: 81
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=19
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 85
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr20.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 25
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr5.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 21
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf.tbi
+    jobid: 17
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=3
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf.tbi
+    jobid: 77
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=18
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 81
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr19.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 17
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr3.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf.tbi
+    jobid: 73
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=17
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 77
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr18.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf.tbi
+    jobid: 13
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=2
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf.tbi
+    jobid: 69
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=16
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 73
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr17.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf.tbi
+    jobid: 1
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=1
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 13
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr2.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf.tbi
+    jobid: 65
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=15
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 69
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr16.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+
+Error in rule index_phased_vcf:
+    jobid: 1
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr1.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf.tbi
+    jobid: 61
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=14
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf.tbi
+    jobid: 57
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=13
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 65
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr15.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 61
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr14.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf.tbi
+    jobid: 53
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=12
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 57
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr13.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf.tbi
+    jobid: 49
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=11
+    resources: tmpdir=/tmp
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf.tbi
+    jobid: 45
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=10
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 53
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr12.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 49
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr11.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf.tbi
+    jobid: 41
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=9
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+
+Error in rule index_phased_vcf:
+    jobid: 45
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr10.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+localrule index_phased_vcf:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf.tbi
+    jobid: 37
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf.tbi
+    wildcards: cancer_type=UVM, chr=8
+    resources: tmpdir=/tmp
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 41
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr9.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Wed Nov 13 17:41:33 2024]
+Error in rule index_phased_vcf:
+    jobid: 37
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf.tbi
+    shell:
+        bcftools index -t -f /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr8.phased.bcf
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake/log/2024-11-13T174132.900543.snakemake.log
+WorkflowError:
+At least one job did not complete successfully.

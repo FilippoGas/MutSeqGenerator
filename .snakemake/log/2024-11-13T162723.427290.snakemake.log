@@ -1,0 +1,28 @@
+host: cibio-bcglab4
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 50
+Rules claiming more threads will be scaled down.
+Job stats:
+job                 count
+----------------  -------
+all                     1
+index_phased_vcf       22
+phasing                22
+total                  45
+
+Select jobs to execute...
+Execute 22 jobs...
+
+[Wed Nov 13 16:27:23 2024]
+localrule phasing:
+    input: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr4.vcf.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps/chr4.b38.gmap.gz, /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/temp/vcf_per_chromosome/chr4.vcf.gz.tbi
+    output: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf
+    jobid: 22
+    reason: Missing output files: /shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/UVM/phased_vcf/UVM.chr4.phased.bcf
+    wildcards: cancer_type=UVM, chr=4
+    resources: tmpdir=/tmp
+
+RuleException in rule phasing in file /shares/CIBIO-Storage/BCG/scratch/fgastaldello/code/cvep-plm/snakefile, line 85:
+NameError: The name 'print $NF' is unknown in this context. Please make sure that you defined that variable. Also note that braces not used for variable access have to be escaped by repeating them, i.e. {{print $1}}, when formatting the following:
+/shares/CIBIO-Storage/BCG/scratch/fgastaldello/tools/shapeit5/phase_common_static --input {input.vcf} --region $(echo '{input.map}' | cut -d '.' -f 1 | awk -F '/' '{print $NF}') --map {input.map} --filter-maf 0.001 --output {output} --thread {threads}

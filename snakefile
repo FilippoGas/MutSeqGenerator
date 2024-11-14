@@ -26,7 +26,9 @@ rule sort_and_compress:
     output:
         temp(config["data_folder"]+"/{cancer_type}/temp/sorted_compressed_vcf/{cancer_type}.{variant_type}.vcf.gz")
     shell:
-        "bcftools sort {input} -Oz -o {output}"
+        # Each execution of bcftools should have his own separate tempdir, to avoid collision between temp files with the same
+        # name belonging to different jobs
+        "bcftools sort --temp-dir "+config["data_folder"]+"/temp/$(echo '{input}' | awk -F '/' '{{print $NF}}') {input} -Oz -o {output}"
 
 
 # Create index of vcf files for improved handling
@@ -36,7 +38,7 @@ rule index:
     output: 
         temp(config["data_folder"]+"/{cancer_type}/temp/sorted_compressed_vcf/{cancer_type}.{variant_type}.vcf.gz.tbi")
     shell: 
-        "bcftools index -t {input}"
+        "bcftools index  -t {input}"
 
 
 # Put togheter SNPs and INDELs in a multisample vcf files
@@ -47,7 +49,7 @@ rule concat:
     output: 
         temp(config["data_folder"]+"/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz")
     shell: 
-        "bcftools concat -a {input.vcf} -Oz -o {output}"
+        "bcftools concat --temp-dir "+config["data_folder"]+"/temp/$(echo '{input}' | awk -F '/' '{{print $NF}}') -a {input.vcf} -Oz -o {output}"
 
 
 # Create index of concatenate vcf file
@@ -57,7 +59,7 @@ rule index_concatenated_vcf:
     output:
         temp(config["data_folder"]+"/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz.tbi")
     shell:
-        "bcftools index -t {input}"
+        "bcftools index  -t {input}"
 
 
 # Split vcf file per chromosomes to allow for parallelization of following steps
@@ -78,7 +80,7 @@ rule index_chromosome_vcf:
     output:
         temp(config["data_folder"]+"/{cancer_type}/temp/vcf_per_chromosome/chr{chr}.vcf.gz.tbi")
     shell:
-        "bcftools index -t {input}"
+        "bcftools  index -t {input}"
 
 
 # vcf files are ready to be phased. To do this, the tool shapeit5 will be used
@@ -91,4 +93,5 @@ rule phasing:
         config["data_folder"]+"/{cancer_type}/phased_vcf/{cancer_type}.chr{chr}.phased.bcf"
     threads:1
     shell:
+        # Maps name MUST be in the format "chr#.[genome_version].gmap.gz (i.e. "chr2.b38.gmap.gz")"
         config["shapeit5"] + " --input {input.vcf} --region $(echo '{input.map}' | cut -d '.' -f 1 | awk -F '/' '{{print $NF}}') --map {input.map} --filter-maf 0.001 --output {output} --thread {threads}"

@@ -9,4 +9,7 @@ shapeit5: "/shares/CIBIO-Storage/BCG/scratch/fgastaldello/tools/shapeit5/phase_c
 # WILDCARDS
 
 variant_types: ["snp", "indel"]
-cancer_types: ["UVM","ACC","BLCA","BRCA","CESC","CHOL","COAD","DLBC","ESCA","GBM","HNSC","KICH","KIRC","KIRP","LAML","LGG","LIHC","LUAD","LUSC","MESO","OV","PAAD","PCPG","PRAD","READ","SARC","SKCM","STAD","TGCT","THCA","THYM","UCEC","UCS","UVM"]
+cancer_types: ["UVM","ACC","BLCA","BRCA","CESC","CHOL","COAD","DLBC","ESCA","GBM","HNSC","KICH","KIRC","KIRP","LAML","LGG","LIHC","LUAD","LUSC","MESO","OV","PAAD","PCPG","PRAD","READ","SARC","SKCM","STAD","TGCT","THCA","THYM","UCEC","UCS"]
+
+# VARIABLES
+threads: 100

@@ -1,3 +1,32 @@
+
+######## Snakemake header ########
+library(methods)
+Snakemake <- setClass(
+    "Snakemake",
+    slots = c(
+        input = "list",
+        output = "list",
+        params = "list",
+        wildcards = "list",
+        threads = "numeric",
+        log = "list",
+        resources = "list",
+        config = "list",
+        rule = "character"
+    )
+)
+snakemake <- Snakemake(
+    input = list('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/wt_cds.RData', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/protein_coding_transcripts.RData', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/temp/DLBC_list.txt', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/DLBC/phased_vcf/chr1.vcf.gz', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/DLBC/phased_vcf/chr1.vcf.gz.tbi', "wt_cds" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/wt_cds.RData', "annotations" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/protein_coding_transcripts.RData', "samples_list" = c('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/temp/DLBC_list.txt'), "vcf" = c('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/DLBC/phased_vcf/chr1.vcf.gz'), "index" = c('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/DLBC/phased_vcf/chr1.vcf.gz.tbi')),
+    output = list('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/DLBC/mutated_sequences/nn/chr1.RData'),
+    params = list(),
+    wildcards = list('DLBC', '1', "cancer_type" = 'DLBC', "chr" = '1'),
+    threads = 1,
+    log = list(),
+    resources = list(),
+    config = list("input_vcf" = '/shares/CIBIO-Storage/BCG/scratch/TCGA-GATK/{cancer_type}.{variant_type}.recalibrated_99.9.vcf', "data_folder" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm', "recombination_maps" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps', "shapeit5" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/tools/shapeit5/phase_common_static', "wt_sequences" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts', "variant_types" = c('snp', 'indel'), "cancer_types" = c('UVM', 'DLBC'), "threads" = 100),
+    rule = 'generate_sequences'
+)
+######## Original script #########
 # Filippo Gastaldello - 03/05/2024
 
 # Generate mutated protein coding sequences for each sample given a vcf file and the sequences 

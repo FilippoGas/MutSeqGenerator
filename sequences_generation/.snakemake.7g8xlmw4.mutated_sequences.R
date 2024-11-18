@@ -1,3 +1,32 @@
+
+######## Snakemake header ########
+library(methods)
+Snakemake <- setClass(
+    "Snakemake",
+    slots = c(
+        input = "list",
+        output = "list",
+        params = "list",
+        wildcards = "list",
+        threads = "numeric",
+        log = "list",
+        resources = "list",
+        config = "list",
+        rule = "character"
+    )
+)
+snakemake <- Snakemake(
+    input = list('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/wt_cds.RData', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/protein_coding_transcripts.RData', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/temp/UVM_list.txt', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/UVM/phased_vcf/chr14.vcf.gz', '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/UVM/phased_vcf/chr14.vcf.gz.tbi', "wt_cds" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/wt_cds.RData', "annotations" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts/protein_coding_transcripts.RData', "samples_list" = c('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/temp/UVM_list.txt'), "vcf" = c('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/UVM/phased_vcf/chr14.vcf.gz'), "index" = c('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/UVM/phased_vcf/chr14.vcf.gz.tbi')),
+    output = list('/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm/tumors/UVM/mutated_sequences/nn/chr14.RData'),
+    params = list(),
+    wildcards = list('UVM', '14', "cancer_type" = 'UVM', "chr" = '14'),
+    threads = 1,
+    log = list(),
+    resources = list(),
+    config = list("input_vcf" = '/shares/CIBIO-Storage/BCG/scratch/TCGA-GATK/{cancer_type}.{variant_type}.recalibrated_99.9.vcf', "data_folder" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/data/cvep-plm', "recombination_maps" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/maps', "shapeit5" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/tools/shapeit5/phase_common_static', "wt_sequences" = '/shares/CIBIO-Storage/BCG/scratch/fgastaldello/resources/protein_coding_transcripts', "variant_types" = c('snp', 'indel'), "cancer_types" = c('UVM', 'DLBC'), "threads" = 100),
+    rule = 'generate_sequences'
+)
+######## Original script #########
 # Filippo Gastaldello - 03/05/2024
 
 # Generate mutated protein coding sequences for each sample given a vcf file and the sequences 
@@ -341,9 +370,8 @@ load(snakemake@input[["annotations"]])
 sample_list <- read_delim(snakemake@input[["samples_list"]], delim = "\n", col_names = FALSE)$X1
 vcf <- read.vcfR(file = snakemake@input[["vcf"]])
 
-# Extract chromosome name from vcf filename and cancer type from sample list filename
+# Extract chromosome name from vcf file
 chr <- snakemake@input[["vcf"]] %>% str_split_i(pattern = "chr", 2) %>% str_split_i(pattern = ".vcf", 1)
-cancer_type <- snakemake@input[["sample_list"]] %>% str_split_i(pattern = "temp/", 2) %>% str_split_i(pattern = "_", 1)
 
 rownames(sequences) <- sequences$ensembl_transcript_id
 sequences$ensembl_transcript_id <- NULL
@@ -362,15 +390,11 @@ variant_anno <- getFIX(vcf) %>% as.data.frame() %>%
                           dplyr::select(CHROM, POS, REF, ALT) %>%
                           mutate(ID = paste(CHROM, POS, sep = "_"))
 
-variant_anno <- variant_anno %>% rownames_to_column(var = "increment")
-variant_anno <- variant_anno %>% mutate(ID = paste(ID, increment, sep = "_"))
-
 # recreate vcf file adding info about variant type
 variants <- variant_anno %>% left_join(gt_matrix, by = "ID")
 rownames(variants) <- variants$ID
 variants <- variants %>% mutate(TYPE = ifelse(nchar(ALT)>1, "insertion", ifelse(nchar(REF)>1, "deletion", "SNP")))
 variants <- variants %>% relocate(TYPE, .after = ALT)
-variants$increment <- NULL
 
 rm(vcf, gt_matrix, variant_anno)
 
@@ -405,17 +429,16 @@ step_time <- Sys.time()
 duration <- difftime(step_time, start_time, units = "sec")
 count <- count + 1
 
-
 if (count/length(sample_list)*100 > 25 & !q1) {
-cat(paste("Chromosome", chr, "from", cancer_type, "at 25%", "in", round(seconds_to_period(duration), 2)," \n"))
+cat(paste("Chromosome", chr, "at 25%", "in", round(seconds_to_period(duration), 2)," \n"))
 q1 <- TRUE
 }
 if (count/length(sample_list)*100 > 50 & !q2) {
-cat(paste("Chromosome", chr, "from", cancer_type, "at 50%", "in", round(seconds_to_period(duration), 2)," \n"))
+cat(paste("Chromosome", chr, "at 50%", "in", round(seconds_to_period(duration), 2)," \n"))
 q2 <- TRUE
 }
 if (count/length(sample_list)*100 > 75 & !q3) {
-cat(paste("Chromosome", chr, "from", cancer_type, "at 75%", "in", round(seconds_to_period(duration), 2)," \n"))
+cat(paste("Chromosome", chr, "at 75%", "in", round(seconds_to_period(duration), 2)," \n"))
 q3 <- TRUE
 }
 

@@ -2,9 +2,7 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        expand(config["data_folder"]+"/tumors/{cancer_type}/phased_vcf/chr{chr}.vcf.gz", cancer_type = config["cancer_types"], variant_type = config["variant_types"], chr = range(1,23)),
-        config["wt_sequences"]+"/wt_cds.RData",
-        config["wt_sequences"]+"/protein_coding_transcripts.RData"
+        expand(config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/nn/chr{chr}.RData", cancer_type = config["cancer_types"], variant_type = config["variant_types"], chr = range(1,23))
         
 
 # Filter variants botg in the SNP and INDEL vcf files, only keeping variants with a recalibrated variant quality score
@@ -116,11 +114,14 @@ rule phasing:
         temp(config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf")
     threads:5
     shell:
-        # Maps name MUST be in the format "chr#.[genome_version].gmap.gz (i.e. "chr2.b38.gmap.gz")"
+        # Map files name MUST be in the format "chr#.[genome_version].gmap.gz (i.e. "chr2.b38.gmap.gz")"
         config["shapeit5"] + " --input {input.vcf} --region $(echo '{input.map}' | cut -d '.' -f 1 | awk -F '/' '{{print $NF}}') --map {input.map} --filter-maf 0.001 --output {output} --thread {threads}"
 
 
 # Sample lists are needed to split back vcf files per cancer type
+#
+# WARNING: Samples list filenames are used in "mutated_sequences.R" to extract the 
+#          cancer type, if the name is modified here, modify it accordingly in the R script.
 rule get_sample_lists_per_cancer_type:
     input:
         rules.concat.output
@@ -141,6 +142,15 @@ rule split_cancer_types:
         "bcftools view --samples-file {input.sample_list} {input.vcf} -Oz -o {output}"
 
 
+rule index_phased_vcf:
+    input:
+        rules.split_cancer_types.output
+    output:
+        config["data_folder"]+"/tumors/{cancer_type}/phased_vcf/chr{chr}.vcf.gz.tbi"
+    shell:
+        "bcftools index -t -f {input} > {output}"
+
+
 # Download wild type sequences and annotations for protein coding genes
 rule download_wt_sequences:
     output:
@@ -149,3 +159,16 @@ rule download_wt_sequences:
     script:
         "sequences_generation/sequences_download.R"
 
+
+# Generate mutated nucleotide sequences for each chromosome
+rule generate_sequences:
+    input:
+        wt_cds = config["wt_sequences"]+"/wt_cds.RData",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
+        samples_list = rules.get_sample_lists_per_cancer_type.output,
+        vcf = rules.split_cancer_types.output,
+        index = rules.index_phased_vcf.output
+    output:
+        config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/nn/chr{chr}.RData"
+    script:
+        "sequences_generation/mutated_sequences.R"

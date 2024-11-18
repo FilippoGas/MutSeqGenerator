@@ -1,10 +1,10 @@
 # Filippo Gastaldello - 29/04/24
 
 # Use biomaRt to download annotations and sequences of all human protein coding
-# transcripts (non MT) and save them into a dataframe in the same directory of this file
+# transcripts (non MT) together with transcript annotations
 
-library(tidyverse)
-library(biomaRt)
+if(!require(tidyverse)) install.packages("tidyverse")
+if(!require(biomaRt)) BiocManager::install("biomaRt")
 
 ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 
@@ -23,9 +23,6 @@ protein_coding_transcripts_featurepage <- getBM(attributes = c("ensembl_transcri
                                                 mart = ensembl)
 
 # get coordinate information for CDS of the previously retrieved transcripts
-
-# retrieving information from the structure attribute page retrieves different
-# annotations (5_utr_end and 3_utr_start) for the same transcript ID
 protein_coding_transcripts_structurepage <- getBM(attributes = c("ensembl_gene_id",
                                                                  "ensembl_transcript_id",
                                                                  "ensembl_peptide_id",
@@ -45,7 +42,7 @@ protein_coding_transcripts_structurepage <- getBM(attributes = c("ensembl_gene_i
 # merge annotation together
 protein_coding_transcripts <- protein_coding_transcripts_structurepage %>% left_join(protein_coding_transcripts_featurepage, by = "ensembl_transcript_id")
 
-# remove transcript without any of peptide_id, cds_start, cds_end to remove
+# remove transcript without any of peptide_id, exon_chrom_start/end, 
 # non protein transcripts (retained introns and non coding exons only composed by UTRs)
 # and transcripts non aligned to chromosomes
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(!is.na(ensembl_peptide_id),
@@ -58,7 +55,7 @@ protein_coding_transcripts <- protein_coding_transcripts %>% filter(!is.na(ensem
 sequences <- data.frame(coding = character(),
                         ensembl_transcript_id = character())
 
-# get sequence for every transcript (cycle at batches of 'stepsize' transcripts to avoid time out)
+# get sequence for every transcript (cycle at batches of size 'stepsize' transcripts to avoid time out)
  stepsize <- 1000; start <- 1; end <- stepsize; done <- FALSE
 
 # time tracking
@@ -94,10 +91,10 @@ cat(paste("Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
 # merge transcript annotations with sequences
 sequences <- sequences %>% rename(sequence = coding)
 
-# save sequences and annotations to files
+# save sequences and annotations to files to path specified in snakemake "download_wt_sequences" rule.
 
-save(sequences, file = "~/BCG/scratch/proteinModel/phasing/resources/cds/cds.RData")
-save(protein_coding_transcripts, file = "~/BCG/scratch/proteinModel/phasing/resources/cds/transcript_annotations.RData")
+save(sequences, file = snakemake@output[["sequences"]])
+save(protein_coding_transcripts, file = snakemake@output[["annotations"]])
 
 
 

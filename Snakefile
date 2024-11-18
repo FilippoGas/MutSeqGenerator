@@ -2,7 +2,9 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        expand(config["data_folder"]+"/{cancer_type}/phased_vcf/chr{chr}.vcf.gz", cancer_type = config["cancer_types"], variant_type = config["variant_types"], chr = range(1,23))
+        expand(config["data_folder"]+"/tumors/{cancer_type}/phased_vcf/chr{chr}.vcf.gz", cancer_type = config["cancer_types"], variant_type = config["variant_types"], chr = range(1,23)),
+        config["wt_sequences"]+"/wt_cds.RData",
+        config["wt_sequences"]+"/protein_coding_transcripts.RData"
         
 
 # Filter variants botg in the SNP and INDEL vcf files, only keeping variants with a recalibrated variant quality score
@@ -11,7 +13,7 @@ rule filter:
     input:
         config["input_vcf"]
     output:
-        temp(config["data_folder"]+"/{cancer_type}/temp/filtered_vcf/{cancer_type}.{variant_type}.vcf")
+        temp(config["data_folder"]+"/tumors/{cancer_type}/temp/filtered_vcf/{cancer_type}.{variant_type}.vcf")
     shell:
         r"""
             bcftools view -i 'FILTER="PASS" || FILTER="VQSRTrancheINDEL99.90to99.95" || FILTER="VQSRTrancheINDEL99.95to100.00"' {input} > {output} ||
@@ -24,7 +26,7 @@ rule sort_and_compress:
     input:
         rules.filter.output
     output:
-        temp(config["data_folder"]+"/{cancer_type}/temp/sorted_compressed_vcf/{cancer_type}.{variant_type}.vcf.gz")
+        temp(config["data_folder"]+"/tumors/{cancer_type}/temp/sorted_compressed_vcf/{cancer_type}.{variant_type}.vcf.gz")
     shell:
         # Each execution of bcftools should have his own separate tempdir, to avoid collision between temp files with the same
         # name belonging to different jobs
@@ -36,7 +38,7 @@ rule index:
     input:
         rules.sort_and_compress.output
     output: 
-        temp(config["data_folder"]+"/{cancer_type}/temp/sorted_compressed_vcf/{cancer_type}.{variant_type}.vcf.gz.tbi")
+        temp(config["data_folder"]+"/tumors/{cancer_type}/temp/sorted_compressed_vcf/{cancer_type}.{variant_type}.vcf.gz.tbi")
     shell: 
         "bcftools index  -t {input}"
 
@@ -44,10 +46,10 @@ rule index:
 # Put togheter SNPs and INDELs in a multisample vcf files
 rule concat:
     input: 
-        vcf = expand(config["data_folder"]+"/{{cancer_type}}/temp/sorted_compressed_vcf/{{cancer_type}}.{variant_type}.vcf.gz", variant_type = config["variant_types"]),
-        index = expand(config["data_folder"]+"/{{cancer_type}}/temp/sorted_compressed_vcf/{{cancer_type}}.{variant_type}.vcf.gz.tbi", variant_type = config["variant_types"])
+        vcf = expand(config["data_folder"]+"/tumors/{{cancer_type}}/temp/sorted_compressed_vcf/{{cancer_type}}.{variant_type}.vcf.gz", variant_type = config["variant_types"]),
+        index = expand(config["data_folder"]+"/tumors/{{cancer_type}}/temp/sorted_compressed_vcf/{{cancer_type}}.{variant_type}.vcf.gz.tbi", variant_type = config["variant_types"])
     output: 
-        temp(config["data_folder"]+"/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz")
+        temp(config["data_folder"]+"/tumors/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz")
     shell: 
         "bcftools concat -a {input.vcf} -Oz -o {output}"
 
@@ -57,7 +59,7 @@ rule index_concatenated_vcf:
     input:
         rules.concat.output
     output:
-        temp(config["data_folder"]+"/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz.tbi")
+        temp(config["data_folder"]+"/tumors/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz.tbi")
     shell:
         "bcftools index  -t {input}"
 
@@ -65,8 +67,8 @@ rule index_concatenated_vcf:
 # Merge all sample from all tumors together to improve accuracy of phasing  
 rule merge_tumors:
     input:
-        vcf = expand(config["data_folder"]+"/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz", cancer_type = config["cancer_types"]),
-        index = expand(config["data_folder"]+"/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz.tbi", cancer_type = config["cancer_types"])
+        vcf = expand(config["data_folder"]+"/tumors/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz", cancer_type = config["cancer_types"]),
+        index = expand(config["data_folder"]+"/tumors/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz.tbi", cancer_type = config["cancer_types"])
     output:
         temp(config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz")
     threads: config["threads"]
@@ -131,9 +133,19 @@ rule get_sample_lists_per_cancer_type:
 # Split back vcf files per cancer type
 rule split_cancer_types:
     input:
-        vcf = config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf",
-        sample_list = config["data_folder"]+"/temp/{cancer_type}_list.txt"
+        vcf = rules.phasing.output,
+        sample_list = rules.get_sample_lists_per_cancer_type.output
     output:
-        config["data_folder"]+"/{cancer_type}/phased_vcf/chr{chr}.vcf.gz"
+        config["data_folder"]+"/tumors/{cancer_type}/phased_vcf/chr{chr}.vcf.gz"
     shell:
-        "bcftools view --samples {wildcards.cancer_type}_list.txt {input.vcf} -Oz -o {output}"
+        "bcftools view --samples-file {input.sample_list} {input.vcf} -Oz -o {output}"
+
+
+# Download wild type sequences and annotations for protein coding genes
+rule download_wt_sequences:
+    output:
+        sequences = config["wt_sequences"]+"/wt_cds.RData",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData"
+    script:
+        "sequences_generation/sequences_download.R"
+

@@ -1,1 +1,2 @@
 .snakemake
+sequences_generation/.snakemake*

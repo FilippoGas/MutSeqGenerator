@@ -1,93 +1,75 @@
 # Filippo Gastaldello - 18/09/2024
 
-# Takes in input lists of genes of interest and find their ensembl ID.
-# Takes a dataframe with DNA sequences of the genes present in the gene lists,
-# identify the canonical translation start site, or the closer one if the canonical is missing, and translate
+# Takes as input a dataframe of nucleotide mutated sequences and translate them
+# in amino acid sequences.
 
-library(Biostrings)
-library(tidyverse)
+if(!require(Biostrings)) BiocManager::install("Biostrings")
+if(!require(tidyverse)) install.packages("tidyverse")
 
-# Load data with with transcripts annotation and sequences
-load("/shares/CIBIO-Storage/BCG/scratch/proteinModel/phasing/resources/cds/transcript_annotations.RData")
-load("/shares/CIBIO-Storage/BCG/scratch/proteinModel/phasing/resources/cds/wt_cds.RData")
 
-# Load genelist of interest
-cancer_genes <- data.table::fread("BCG/scratch1/Resources/geneLists/CancerGenesList.txt", sep="\n", header = FALSE, col.names = "hgnc")
-onco_genes <- data.table::fread("BCG/scratch1/Resources/geneLists/Oncogenes.txt", sep = "\n", header = FALSE, col.names = "hgnc")
-suppressor_genes <- data.table::fread("BCG/scratch1/Resources/geneLists/TumorSupp.txt", sep = "\n", header = FALSE, col.names = "hgnc")
+# FUNCTIONS
 
-# Get ensembl ID for all genes
-ensembl <- biomaRt::useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
-ensembl_IDs <- biomaRt::getBM(attributes = c("hgnc_symbol", "ensembl_gene_id", "chromosome_name"),
-                                filters = "hgnc_symbol",
-                                values = unique(c(cancer_genes$hgnc, onco_genes$hgnc, suppressor_genes$hgnc)),
-                                mart = ensembl)
-
-# Keep only genes aligned on reference chromosomes, not scaffolds, hap regions etc...
-ensembl_IDs <- ensembl_IDs %>% filter(chromosome_name %in% c(seq(1,22,1),"X","Y"))
-
-# Retrieve gene symbols without matching ensembl ID
-no_match <- setdiff(unique(c(cancer_genes$hgnc, suppressor_genes$hgnc, onco_genes$hgnc)),ensembl_IDs$hgnc_symbol)
-
-# In each gene list substitute old alias with new name
-for (symbol in no_match) {
-        
-        alias <- if (length(limma::alias2Symbol(symbol))>0) limma::alias2Symbol(symbol) else "NA"
-        
-        cancer_genes[hgnc == symbol] <- alias
-        onco_genes[hgnc == symbol] <- alias
-        suppressor_genes[hgnc == symbol] <- alias
+find_canon_start_location <- function(transcript_IDs) {
+  
+  starts <- sapply(transcript_IDs, function(transcript){
+    protein_coding_transcripts %>%
+      filter(ensembl_transcript_id == transcript) %>%
+      select(7, 8) %>%
+      drop_na() %>%
+      mutate(length = .[[2]] - .[[1]] + 1) %>%
+      select(length) %>%
+      sum() %>%
+      as.numeric()
+    
+  }
+  )
+  
+  return(starts)
 }
 
-# Drop genes for which no alias could be found
-cancer_genes <- cancer_genes[hgnc != "NA"]
-onco_genes <- onco_genes[hgnc != "NA"]
-suppressor_genes <- suppressor_genes[hgnc != "NA"]
-
-# Retrieve info again for updated aliases
-new_aliases_ensembl_IDs <- biomaRt::getBM(attributes = c("hgnc_symbol", "ensembl_gene_id", "chromosome_name"),
-                              filters = "hgnc_symbol",
-                              values = limma::alias2Symbol(no_match),
-                              mart = ensembl)
-
-# Keep only genes aligned on reference chromosomes, not scaffolds, hap regions etc...
-new_aliases_ensembl_IDs <- new_aliases_ensembl_IDs %>% filter(chromosome_name %in% c(seq(1,22,1),"X","Y"))
-
-# Merge the two ID dataframes
-ensembl_IDs <- unique(rbind(ensembl_IDs, new_aliases_ensembl_IDs)) %>% select(hgnc_symbol, ensembl_gene_id)
-
-# Add the retrieved ensembl IDs to the gene lists
-cancer_genes <- cancer_genes %>% left_join(ensembl_IDs, by = join_by(hgnc == hgnc_symbol))
-onco_genes <- onco_genes %>% left_join(ensembl_IDs, by = join_by(hgnc == hgnc_symbol))
-suppressor_genes <- suppressor_genes %>% left_join(ensembl_IDs, by = join_by(hgnc == hgnc_symbol))
-
-rm(new_aliases_ensembl_IDs, no_match, symbol, alias, ensembl_IDs)
-
-# Subset annotation table to keep only genes of interest
-cancer_genes_transcripts <- protein_coding_transcripts %>% filter(ensembl_gene_id %in% unique(c(cancer_genes$ensembl_gene_id,
-                                                                                                onco_genes$ensembl_gene_id,
-                                                                                                suppressor_genes$ensembl_gene_id)))
-rm(protein_coding_transcripts)
-
-# Initialize df to store sequences of genes of interest
-cancer_genes_sequences <- data.frame()
-
-# Look for mutated sequences of the genes of interest in each chromosome 
-for (chr in seq(1,22,1)) {
-
-        # Load mutated sequences for the current chromosome
-        load(paste0("BCG/scratch/proteinModel/phasing/resources/cds/mutated_nucleotide_sequences/mutated_sequences_chr",chr ,".RData"))
-        # Extract sequences of the genes of interest
-        cancer_genes_sequences <- rbind(cancer_genes_sequences,
-                                        mutated_sequences[unique(cancer_genes_transcripts[which(cancer_genes_transcripts$chromosome_name==chr),"ensembl_transcript_id"]),])
-        rm(mutated_sequences)
+find_canon_start_codon <- function(transcript_IDs) {
+  
+  codons <- sapply(transcript_IDs, function(transcript){
+    
+    start <- as.numeric(canon_starts[which(canon_starts$ensembl_transcript_id==transcript),2])
+    codon <- str_sub(sequences[which(sequences$ensembl_transcript_id == transcript),1],start+1, start+3)
+  }
+  )
+  return(codons)
+  
 }
 
-save.image("BCG/scratch/proteinModel/phasing/resources/cds/translation_workspace.RData")
-load("/shares/CIBIO-Storage/BCG/scratch/proteinModel/phasing/resources/cds/translation_workspace.RData")
+find_closest_start <- function(seq, canon_start_location) {
+  
+  ATG_locations <- as.data.frame(str_locate_all(seq, "ATG")[[1]])
+  if (nrow(ATG_locations) > 0) {
+    
+    # Find value of minimum distance
+    closest_start <- ATG_locations %>% mutate(dist = abs((start + 1) - canon_start_location))
+    # Find corresponding locaiton
+    closest_start <- closest_start[match(min(closest_start$dist, na.rm = TRUE), closest_start$dist),1]
+    
+  }else{
+    closest_start <- 0
+  }           
+  
+}
+
+
+#### MAIN ####
+
+
+# Load wild type sequences, transcript annotations and the mutated nucleotide sequences
+load(snakemake@input[["wt_cds"]])
+load(snakemake@input[["annotations"]])
+load(snakemake@input[["mutated_cds"]])
+
+# Subset annotation table and wild type sequences to keep only genes of interest
+protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id) %in% unique(mutated_sequences$ensembl_transcript_id)
+sequences <- sequences[which(rownames(sequences) %in% unique(mutated_sequences$ensembl_transcript_id))]
 
 # Compute, for each transcript, the expected location of the start codon within the sequence (should be the 3 basis after the end of the 5' UTR)
-canon_starts <- data.frame(ensembl_transcript_id = rownames(cancer_genes_sequences))
+canon_starts <- data.frame(ensembl_transcript_id = rownames(sequences))
 canon_starts <- canon_starts %>% mutate(start_position = find_canon_start_location(ensembl_transcript_id))
 
 # If needed remove sequences starting with n
@@ -97,11 +79,11 @@ n_starting_sequences <- sequences %>% filter(str_detect(sequence, "N")) %>% sele
 canon_starts <- canon_starts %>% mutate(start_codon = find_canon_start_codon(ensembl_transcript_id))
 
 # Initialize resulting df
-result <- data.frame(matrix(ncol = length(colnames(cancer_genes_sequences)), nrow = length(rownames(cancer_genes_sequences))))
-rownames(result) <- rownames(cancer_genes_sequences)
-colnames(result) <- colnames(cancer_genes_sequences)
+result <- data.frame(matrix(ncol = length(colnames(sequences)), nrow = length(rownames(sequences))))
+rownames(result) <- rownames(sequences)
+colnames(result) <- colnames(sequences)
 
-for(transcript in rownames(cancer_genes_sequences)){
+for(transcript in rownames(sequences)){
 
         cat(transcript, "\n")
         
@@ -113,11 +95,11 @@ for(transcript in rownames(cancer_genes_sequences)){
         canon_start_codon <- canon_starts[which(canon_starts$ensembl_transcript_id == transcript),"start_codon"]
 
         # Iterate over each sample
-        for (sample in colnames(cancer_genes_sequences)) {
+        for (sample in colnames(sequences)) {
 
                 # Iterate over each sequence
                 first = TRUE # Flag to check if I'm working of first or second sequence
-                for (seq in str_split_1(cancer_genes_sequences[transcript, sample], pattern = "-")) {
+                for (seq in str_split_1(sequences[transcript, sample], pattern = "-")) {
                         # Check if sequence was already translated
                         if (is_null(seq_dict[[seq]])) {
 
@@ -225,52 +207,3 @@ for(transcript in rownames(cancer_genes_sequences)){
 
 # Save result
 save(result, file = "/shares/CIBIO-Storage/BCG/scratch/proteinModel/phasing/mutated_aa_sequences/mutated_aa_sequences_cancer_genes.RData")
-
- # FUNCTIONS
-
-find_canon_start_location <- function(transcript_IDs) {
-        
-        starts <- sapply(transcript_IDs, function(transcript){
-                                                cancer_genes_transcripts %>%
-                                                        filter(ensembl_transcript_id == transcript) %>%
-                                                        select(7, 8) %>%
-                                                        drop_na() %>%
-                                                        mutate(length = .[[2]] - .[[1]] + 1) %>%
-                                                        select(length) %>%
-                                                        sum() %>%
-                                                        as.numeric()
-                                                        
-                                        }
-                      )
-                      
-        return(starts)
-}
-
-find_canon_start_codon <- function(transcript_IDs) {
-        
-        codons <- sapply(transcript_IDs, function(transcript){
-                                                
-                                                start <- as.numeric(canon_starts[which(canon_starts$ensembl_transcript_id==transcript),2])
-                                                codon <- str_sub(sequences[which(sequences$ensembl_transcript_id == transcript),1],start+1, start+3)
-                                        }
-                         )
-        return(codons)
-        
-}
-
-find_closest_start <- function(seq, canon_start_location) {
-        
-        ATG_locations <- as.data.frame(str_locate_all(seq, "ATG")[[1]])
-        if (nrow(ATG_locations) > 0) {
-                
-                # Find value of minimum distance
-                closest_start <- ATG_locations %>% mutate(dist = abs((start + 1) - canon_start_location))
-                # Find corresponding locaiton
-                closest_start <- closest_start[match(min(closest_start$dist, na.rm = TRUE), closest_start$dist),1]
-                
-        }else{
-                closest_start <- 0
-        }           
-        
-}
-

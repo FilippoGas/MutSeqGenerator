@@ -172,3 +172,15 @@ rule generate_sequences:
         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/nn/chr{chr}.RData"
     script:
         "sequences_generation/mutated_sequences.R"
+
+
+# Translate the mutated nucleotide sequences
+rule translate_sequences:
+    input:
+        wt_cds = config["wt_sequences"]+"/wt_cds.RData",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
+        mutated_cds = rules.generate_sequences.output
+    output:
+        config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
+    script:
+        "sequences_generation/translate_sequences.R"

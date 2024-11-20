@@ -96,7 +96,7 @@ sequences <- sequences %>% filter(!sequence=="Sequence unavailable")
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 
 # save sequences and annotations to files to path specified in snakemake "download_wt_sequences" rule.
-
+write(sequences$ensembl_transcript_id, file = snakemake@output[["names"]])
 save(sequences, file = snakemake@output[["sequences"]])
 save(protein_coding_transcripts, file = snakemake@output[["annotations"]])
 

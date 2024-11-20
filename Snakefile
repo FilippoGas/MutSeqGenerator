@@ -1,12 +1,18 @@
 configfile: "config.yaml"
 
+def get_transcripts_name(path_to_file):
+    with open(path_to_file, "r") as f:
+        names = [line.strip() for line in f]
+    return names
+
 rule all:
     input:
         # download_wt_sequences is independent from any other rule. It always needs to be in rule all.
         config["wt_sequences"]+"/wt_cds.RData",
         config["wt_sequences"]+"/protein_coding_transcripts.RData",
-        # translate_sequences
-        expand(config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData", cancer_type = config["cancer_types"], chr = range(1,23))
+        config["wt_sequences"]+"/transcripts_name.txt",
+        # Prepare_sequences_for_ESM
+        expand(config["data_folder"]+"/tumors/{cancer_type}/ESM_inputs/chr{chr}.txt",cancer_type=config["cancer_types"], chr=range(1,23))
 
 
 # Filter variants botg in the SNP and INDEL vcf files, only keeping variants with a recalibrated variant quality score
@@ -160,7 +166,8 @@ rule index_phased_vcf:
 rule download_wt_sequences:
     output:
         sequences = config["wt_sequences"]+"/wt_cds.RData",
-        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData"
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
+        names = config["wt_sequences"]+"/transcripts_name.txt"
     script:
         "sequences_generation/sequences_download.R"
 
@@ -193,3 +200,21 @@ rule translate_sequences:
         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
     script:
         "sequences_generation/translate_sequences.R"
+
+
+# Prepare sequences for ESM evaluation. For each cancer type, generates one csv for 
+# each transcript containing its unique haplotypes.
+#
+# This output is fake, it's needed to trick snakemake into thinking that there is a 1-1 
+# relationship between input and output. Internally the scripts is actually saving more output
+# for each input, and only at the end generates the temporary output required by snakemake.
+rule prepare_esm_input:
+    input:  
+        config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
+    output:
+        # Inside the R script the name of the transcript is attached to this path, this fake 
+        # is needed to create the ESM_inputs directory before R start.
+        temp(config["data_folder"]+"/tumors/{cancer_type}/ESM_inputs/chr{chr}.txt")
+    script:
+        "sequences_evaluation/prepare_sequences_for_ESM.R"
+

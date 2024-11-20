@@ -1,12 +1,14 @@
 # Filippo Gastaldello - 23/09/2024
 
 # Take in input dataframe with mutated amino acid sequences of all transcript
-# for each sample.
+# for each sample, generate a csv file for each transcripts which its unique haplotypes
 
 library(tidyverse)
 
 # Load csv with mutated sequences
-sequences <- column_to_rownames(read_csv("BCG/scratch/proteinModel/phasing/mutated_aa_sequences/small_example.csv"), var = "...1")
+load(snakemake@input[[1]])
+sequences <- result
+rm(result)
 
 # Create one csv file for each transcript containing a unique set of mutatated sequences
 for (transcript in rownames(sequences)) {
@@ -39,6 +41,10 @@ for (transcript in rownames(sequences)) {
                 
         }
         
-        write.table(result, file = paste0("/shares/CIBIO-Storage/BCG/scratch/proteinModel/phasing/ESM_inputs/", as.name(transcript), ".csv"), row.names = FALSE, col.names = FALSE)
+        output <- paste0(str_split_i(snakemake@output[[1]], pattern = "chr", 1), transcript, ".csv")
+        write.table(result, file = output, row.names = FALSE, col.names = FALSE)
         
 }
+
+# Toy output to let snakemake know we're done.
+write("Done", file = snakemake@output[[1]])

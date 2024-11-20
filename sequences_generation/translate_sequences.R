@@ -64,28 +64,39 @@ load(snakemake@input[["wt_cds"]])
 load(snakemake@input[["annotations"]])
 load(snakemake@input[["mutated_cds"]])
 
+# Extract chromosome name and cancer type from input files
+chr <- str_split_i(snakemake@input[["mutated_cds"]], pattern = "chr", 2) %>% str_split_i(pattern = ".RData", 1)
+cancer_type <- str_split_i(snakemake@input[["mutated_cds"]], pattern = "tumors/", 2) %>% str_split_i(pattern = "/mutated", 1)
+
 # Subset annotation table and wild type sequences to keep only genes of interest
-protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id) %in% unique(mutated_sequences$ensembl_transcript_id)
-sequences <- sequences[which(rownames(sequences) %in% unique(mutated_sequences$ensembl_transcript_id))]
+protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id %in% rownames(mutated_sequences))
+sequences <- sequences %>% filter(ensembl_transcript_id %in% rownames(mutated_sequences))
+sequences <- sequences %>% column_to_rownames(var = "ensembl_transcript_id")
 
 # Compute, for each transcript, the expected location of the start codon within the sequence (should be the 3 basis after the end of the 5' UTR)
 canon_starts <- data.frame(ensembl_transcript_id = rownames(sequences))
 canon_starts <- canon_starts %>% mutate(start_position = find_canon_start_location(ensembl_transcript_id))
 
 # If needed remove sequences starting with n
-n_starting_sequences <- sequences %>% filter(str_detect(sequence, "N")) %>% select(ensembl_transcript_id)
+n_starting_sequences <- sequences %>% filter(str_detect(sequence, "N")) %>% rownames()
 
 # Find the actual start codon in the wild type sequence (it is not always ATG :( )
 canon_starts <- canon_starts %>% mutate(start_codon = find_canon_start_codon(ensembl_transcript_id))
 
 # Initialize resulting df
-result <- data.frame(matrix(ncol = length(colnames(sequences)), nrow = length(rownames(sequences))))
+result <- data.frame(matrix(ncol = length(colnames(mutated_sequences)), nrow = length(rownames(sequences))))
 rownames(result) <- rownames(sequences)
-colnames(result) <- colnames(sequences)
+colnames(result) <- colnames(mutated_sequences)
+
+
+# time tracking
+start_time <- Sys.time()
+
+# set up counters to follow execution progress
+count <- 0; q1 <- FALSE; q2 <- FALSE; q3 <- FALSE
+
 
 for(transcript in rownames(sequences)){
-
-        cat(transcript, "\n")
         
         # Initialize dictionary to store translated sequences. Avoid to translate the same sequence more than once
         seq_dict <- list()
@@ -95,11 +106,11 @@ for(transcript in rownames(sequences)){
         canon_start_codon <- canon_starts[which(canon_starts$ensembl_transcript_id == transcript),"start_codon"]
 
         # Iterate over each sample
-        for (sample in colnames(sequences)) {
+        for (sample in colnames(mutated_sequences)) {
 
                 # Iterate over each sequence
                 first = TRUE # Flag to check if I'm working of first or second sequence
-                for (seq in str_split_1(sequences[transcript, sample], pattern = "-")) {
+                for (seq in str_split_1(mutated_sequences[transcript, sample], pattern = "-")) {
                         # Check if sequence was already translated
                         if (is_null(seq_dict[[seq]])) {
 
@@ -112,6 +123,10 @@ for(transcript in rownames(sequences)){
                                         
                                         # Canon start is there, use it as translation start position
                                         translation_start <- canon_start_location
+                                        # Insert ATG as first codon in case the sequence has an alternative start codon, this 
+                                        # is because even if a transcript start with an alternative start codon, the first included
+                                        # aa is always a methionine
+                                        seq <- paste0("ATG",str_sub(seq, 4, nchar(seq)))
 
                                 }else{
                                         # The wild type start codon is missing, look for the closest ATG to canon_start_location.
@@ -124,9 +139,9 @@ for(transcript in rownames(sequences)){
                                 seq <- str_sub(seq, translation_start, nchar(seq))
                                 
                                 
-                                #remove first codon if it starts with N
+                                # Substitute first codon if it starts with N with ATG
                                 if (str_detect(seq, "^N")) {
-                                        seq <- str_sub(seq, 4, nchar(seq))
+                                        seq <- paste0("ATG",str_sub(seq, 4, nchar(seq)))
                                 }
                                 
                                 
@@ -203,7 +218,31 @@ for(transcript in rownames(sequences)){
                 }
                 result[transcript, sample] <- aa_seq
         }
+        
+        # print progress
+        step_time <- Sys.time()
+        duration <- difftime(step_time, start_time, units = "sec") 
+        count <- count + 1
+        
+        
+        if (count/length(colnames(mutated_sequences))*100 > 25 & !q1) {
+          cat(paste("TRANSLATION: Chromosome", chr, "from", cancer_type, "at 25%", "in", round(seconds_to_period(duration), 2)," \n"))
+          q1 <- TRUE
+        }
+        if (count/length(colnames(mutated_sequences))*100 > 50 & !q2) {
+          cat(paste("TRANSLATION: Chromosome", chr, "from", cancer_type, "at 50%", "in", round(seconds_to_period(duration), 2)," \n"))
+          q2 <- TRUE
+        }
+        if (count/length(colnames(mutated_sequences))*100 > 75 & !q3) {
+          cat(paste("TRANSLATION: Chromosome", chr, "from", cancer_type, "at 75%", "in", round(seconds_to_period(duration), 2)," \n"))
+          q3 <- TRUE
+        }
 }
 
+# print total elapsed time
+end_time <- Sys.time()
+duration <- difftime(end_time, start_time, units = "sec")
+cat(paste("Done chromosome", chr,"from ", cancer_type,". Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
+
 # Save result
-save(result, file = "/shares/CIBIO-Storage/BCG/scratch/proteinModel/phasing/mutated_aa_sequences/mutated_aa_sequences_cancer_genes.RData")
+save(result, file = snakemake@output[[1]])

@@ -91,6 +91,10 @@ cat(paste("Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
 # merge transcript annotations with sequences
 sequences <- sequences %>% rename(sequence = coding)
 
+# Discard transcripts without sequence
+sequences <- sequences %>% filter(!sequence=="Sequence unavailable")
+protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
+
 # save sequences and annotations to files to path specified in snakemake "download_wt_sequences" rule.
 
 save(sequences, file = snakemake@output[["sequences"]])

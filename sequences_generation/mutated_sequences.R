@@ -342,7 +342,7 @@ vcf <- read.vcfR(file = snakemake@input[["vcf"]])
 
 # Extract chromosome name from vcf filename and cancer type from sample list filename
 chr <- snakemake@input[["vcf"]] %>% str_split_i(pattern = "chr", 2) %>% str_split_i(pattern = ".vcf", 1)
-cancer_type <- snakemake@input[["samples_list"]] %>% str_split_i(pattern = "temp/", 2) %>% str_split_i(pattern = "_", 1)
+cancer_type <- snakemake@input[["samples_list"]] %>% str_split_i(pattern = "tumors/", 2) %>% str_split_i(pattern = "/", 1)
 
 # Subset wild type sequences and transcript annotations only to genes in the current chromosome
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(chromosome_name == chr)
@@ -387,13 +387,15 @@ variants_ID <- which_rows(protein_coding_transcripts, variants_coord, chr)
 rownames(variants_ID) <- variants_ID$transcript
 variants_ID$transcript <- NULL
 
-sample_list <- colnames(variants[,6:ncol(variants)])
-
 # time tracking
 start_time <- Sys.time()
 
 # set up counters to follow execution progress
 count <- 0; q1 <- FALSE; q2 <- FALSE; q3 <- FALSE
+
+# Switch from dot notation to dash notation in colnames(variants)
+colnames(variants) <- gsub("\\.", "-", colnames(variants))
+
 
 for (sample in sample_list) {
   
@@ -414,15 +416,15 @@ for (sample in sample_list) {
         
         
         if (count/length(sample_list)*100 > 25 & !q1) {
-                cat(paste("Chromosome", chr, "from", cancer_type, "at 25%", "in", round(seconds_to_period(duration), 2)," \n"))
+                cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 25%", "in", round(seconds_to_period(duration), 2)," \n"))
                 q1 <- TRUE
         }
         if (count/length(sample_list)*100 > 50 & !q2) {
-                cat(paste("Chromosome", chr, "from", cancer_type, "at 50%", "in", round(seconds_to_period(duration), 2)," \n"))
+                cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 50%", "in", round(seconds_to_period(duration), 2)," \n"))
                 q2 <- TRUE
         }
         if (count/length(sample_list)*100 > 75 & !q3) {
-                cat(paste("Chromosome", chr, "from", cancer_type, "at 75%", "in", round(seconds_to_period(duration), 2)," \n"))
+                cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 75%", "in", round(seconds_to_period(duration), 2)," \n"))
                 q3 <- TRUE
         }
 
@@ -433,4 +435,4 @@ duration <- difftime(end_time, start_time, units = "sec")
 
 mutated_sequences <- mutated_sequences %>% drop_na()
 save(mutated_sequences, file = snakemake@output[[1]])
-cat(paste("Done chromosome", chr,". Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
+cat(paste("GENERATION: Done chromosome", chr," from", cancer_type, ". Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))

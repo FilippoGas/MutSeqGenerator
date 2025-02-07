@@ -170,6 +170,7 @@ rule index_phased_vcf:
 rule download_wt_sequences:
     output:
         sequences = config["wt_sequences"]+"/wt_cds.RData",
+        sequences_no_utr = config["wt_sequences"]+"/wt_cds_no_utr.RData",
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
         names = config["wt_sequences"]+"/transcripts_name.txt"
     script:

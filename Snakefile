@@ -7,6 +7,8 @@ def get_transcripts_name(path_to_file):
 
 rule all:
     input:
+        # Temporary stop pipeline before phasing
+        # expand(config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz.tbi",  chr=range(1,23))
         # download_wt_sequences is independent from any other rule. It always needs to be in rule all.
         config["wt_sequences"]+"/wt_cds.RData",
         config["wt_sequences"]+"/protein_coding_transcripts.RData",
@@ -99,7 +101,7 @@ rule split_chromosomes:
         vcf = config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz",
         index = config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz.tbi"
     output:
-        temp(config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz")
+        config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz"
     shell:
         "bcftools view --regions chr{wildcards.chr} {input.vcf} -Oz -o {output}"
 
@@ -109,7 +111,7 @@ rule index_chromosome_vcf:
     input:
         rules.split_chromosomes.output
     output:
-        temp(config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz.tbi")
+        config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz.tbi"
     shell:
         "bcftools  index -t {input}"
 
@@ -121,14 +123,14 @@ rule phasing:
         map = config["recombination_maps"] + "/chr{chr}.b38.gmap.gz",
         indexes = rules.index_chromosome_vcf.output
     output:
-        bcf = temp(config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf"),
-        index = temp(config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf.csi")
-    threads:5
+        bcf = config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf",
+        index = config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf.csi"
+    threads:1
     resources: 
         mem_mb = lambda wildcards, attempt: round(10240 * 1.5 * attempt)
     shell:  
         # Map files name MUST be in the format "chr#.[genome_version].gmap.gz (i.e. "chr2.b38.gmap.gz")"
-        config["shapeit5"] + " --input {input.vcf} --region $(echo '{input.map}' | cut -d '.' -f 1 | awk -F '/' '{{print $NF}}') --map {input.map} --filter-maf 0.001 --output {output.bcf} --thread {threads}"
+        config["shapeit5"] + " --input {input.vcf} --region $(echo '{input.map}' | cut -d '.' -f 1 | awk -F '/' '{{print $NF}}') --map {input.map} --filter-maf 0.01 --output {output.bcf} --thread {threads}"
 
 
 # Sample lists are needed to split back vcf files per cancer type

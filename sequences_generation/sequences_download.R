@@ -72,7 +72,7 @@ while (!done) {
   # concat new sequences to existing dataframe
   sequences <- bind_rows(sequences, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
                            type = "ensembl_transcript_id",
-                           seqType = "coding",
+                           seqType = "cdna",
                            mart = ensembl))
   
   # print progress

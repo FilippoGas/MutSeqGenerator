@@ -54,8 +54,6 @@ protein_coding_transcripts <- protein_coding_transcripts %>% filter(!is.na(ensem
 # prepare dataframe to store sequences both with, and without UTRs
 sequences <- data.frame(coding = character(),
                         ensembl_transcript_id = character())
-sequences_no_utr <- data.frame(coding = character(),
-                        ensembl_transcript_id = character())
 # get sequence for every transcript (cycle at batches of size 'stepsize' transcripts to avoid time out)
  stepsize <- 1000; start <- 1; end <- stepsize; done <- FALSE
 
@@ -75,10 +73,6 @@ while (!done) {
                            type = "ensembl_transcript_id",
                            seqType = "cdna",
                            mart = ensembl))
-  sequences_no_utr <- bind_rows(sequences, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
-                                                type = "ensembl_transcript_id",
-                                                seqType = "coding",
-                                                mart = ensembl))
   
   # print progress
   step_time <- Sys.time()
@@ -95,18 +89,15 @@ cat(paste("Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
 
 # merge transcript annotations with sequences
 sequences <- sequences %>% rename(sequence = coding)
-sequences_no_utr <- sequences_no_utr %>% rename(sequence = coding)
 
 
 # Discard transcripts without sequence
 sequences <- sequences %>% filter(!sequence=="Sequence unavailable")
-sequences_no_utr <- sequences_no_utr %>% filter(!sequence=="Sequence unavailable")
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 
 # save sequences and annotations to files to path specified in snakemake "download_wt_sequences" rule.
 write(sequences$ensembl_transcript_id, file = snakemake@output[["names"]])
 save(sequences, file = snakemake@output[["sequences"]])
-save(sequences_no_utr, file = snakemake@output[["sequences_no_utr"]])
 save(protein_coding_transcripts, file = snakemake@output[["annotations"]])
 
 

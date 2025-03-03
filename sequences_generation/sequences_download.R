@@ -54,8 +54,10 @@ protein_coding_transcripts <- protein_coding_transcripts %>% filter(!is.na(ensem
 # prepare dataframe to store sequences both with, and without UTRs
 sequences <- data.frame(coding = character(),
                         ensembl_transcript_id = character())
+sequences_aa <- data.frame(peptide = character(),
+                        ensembl_transcript_id = character())
 # get sequence for every transcript (cycle at batches of size 'stepsize' transcripts to avoid time out)
- stepsize <- 1000; start <- 1; end <- stepsize; done <- FALSE
+ stepsize <- 10000; start <- 1; end <- stepsize; done <- FALSE
 
 # time tracking
 start_time <- Sys.time()
@@ -73,6 +75,10 @@ while (!done) {
                            type = "ensembl_transcript_id",
                            seqType = "cdna",
                            mart = ensembl))
+  sequences_aa <- bind_rows(sequences_aa, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
+                                                type = "ensembl_transcript_id",
+                                                seqType = "peptide",
+                                                mart = ensembl))
   
   # print progress
   step_time <- Sys.time()
@@ -88,16 +94,19 @@ duration <- difftime(end_time, start_time, units = "sec")
 cat(paste("Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
 
 # merge transcript annotations with sequences
-sequences <- sequences %>% rename(sequence = coding)
+sequences <- sequences %>% dplyr::rename(sequence = cdna)
+sequences_aa <- sequences_aa %>% dplyr::rename(sequence = peptide)
 
 
 # Discard transcripts without sequence
 sequences <- sequences %>% filter(!sequence=="Sequence unavailable")
+sequences_aa <- sequences_aa %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 
 # save sequences and annotations to files to path specified in snakemake "download_wt_sequences" rule.
 write(sequences$ensembl_transcript_id, file = snakemake@output[["names"]])
 save(sequences, file = snakemake@output[["sequences"]])
+save(sequences_aa, file = snakemake@output[["sequences_aa"]])
 save(protein_coding_transcripts, file = snakemake@output[["annotations"]])
 
 

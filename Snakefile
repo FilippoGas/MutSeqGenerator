@@ -6,11 +6,11 @@ def get_transcripts_name(path_to_file):
     return names
 
 rule all:
+    # Set output of last rule, or any independent rule (like download_wt_sequences) as input
     input:
-        # Temporary stop pipeline before phasing
-        # expand(config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz.tbi",  chr=range(1,23))
         # download_wt_sequences is independent from any other rule. It always needs to be in rule all.
         config["wt_sequences"]+"/wt_cds.RData",
+        config["wt_sequences"]+"/wt_aa.RData",
         config["wt_sequences"]+"/protein_coding_transcripts.RData",
         config["wt_sequences"]+"/transcripts_name.txt",
         # Prepare_sequences_for_ESM
@@ -170,6 +170,7 @@ rule index_phased_vcf:
 rule download_wt_sequences:
     output:
         sequences = config["wt_sequences"]+"/wt_cds.RData",
+        sequences_aa = config["wt_sequences"]+"/wt_aa.RData",
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
         names = config["wt_sequences"]+"/transcripts_name.txt"
     script:

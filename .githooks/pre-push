@@ -1,0 +1,20 @@
+#!/bin/sh
+
+echo "\n==================== pre-push hook ====================\n"
+
+# Export conda environment
+conda env export -n mutseqgen | grep -v "^prefix" > env.yaml
+
+# Check if new environment file is different from original
+git diff --exit-code --quiet env.yaml
+
+# If new environment file is different, commit it
+if [ $? -eq 0 ]; then
+	echo "env file up to date."
+else
+	echo "Local env file changed, committing new changes."
+	git add env.yaml
+	git commit -m "env.yaml updated"
+	echo "Push again to apply changes."
+	exit 1
+fi

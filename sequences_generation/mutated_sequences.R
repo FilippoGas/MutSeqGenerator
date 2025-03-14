@@ -404,7 +404,7 @@ for (sample in sample_list) {
                 # get the IDs of variants affecting transcript
                 IDs <- str_split_1(variants_ID[transcript, 1], pattern = ", ")
                 
-                mutated_sequences[transcript, sample] <- build_mutated_sequence(paste(sequences[transcript, 1],sequences[transcript,1], sep = "-"),
+                mutated_sequences[transcript, sample] <- build_mutated_sequence(paste(sequences[transcript, 'sequence'],sequences[transcript,'sequence'], sep = "-"),
                                                                               variants[IDs, c("POS", "REF", "ALT", "TYPE", sample)] %>% filter(!!as.name(sample) != "0|0"),
                                                                               unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"strand"]))
         }

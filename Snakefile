@@ -191,6 +191,8 @@ rule generate_sequences:
         index = rules.index_phased_vcf.output
     output:
         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/nn/chr{chr}.RData"
+    conda:
+        "envs/Renv.yaml"
     script:
         "sequences_generation/mutated_sequences.R"
 
@@ -203,6 +205,8 @@ rule translate_sequences:
         mutated_cds = rules.generate_sequences.output
     output:
         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
+    conda:
+        "envs/Renv.yaml"
     script:
         "sequences_generation/translate_sequences.R"
 
@@ -220,6 +224,8 @@ rule prepare_esm_input:
         # Inside the R script the name of the transcript is attached to this path, this fake 
         # is needed to create the ESM_inputs directory before R start.
         temp(config["data_folder"]+"/tumors/{cancer_type}/ESM_inputs/chr{chr}.txt")
+    conda:
+        "envs/Renv.yaml"
     script:
         "sequences_evaluation/prepare_sequences_for_ESM.R"
 

@@ -1,10 +1,10 @@
 name: Renv
 channels:
-	- conda-forge
-	- bioconda
+ - conda-forge
+ - bioconda
 dependencies:
-	- r-base=4.2.2
-	- r-tidyverse=2.0.0
-	- r-vcfr=1.15.0
-	- r-biocmanager=1.30.23
-	- bioconductor-biostrings=2.66.0
+ - r-base=4.2.2
+ - r-tidyverse=2.0.0
+ - r-vcfr=1.15.0
+ - r-biocmanager=1.30.23
+ - bioconductor-biostrings=2.66.0

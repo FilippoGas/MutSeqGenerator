@@ -368,7 +368,7 @@ variant_anno <- getFIX(vcf) %>% as.data.frame() %>%
 variant_anno <- variant_anno %>% rownames_to_column(var = "increment")
 variant_anno <- variant_anno %>% mutate(ID = paste(ID, increment, sep = "_"))
 
-gt_matrix <- gt_matrix %>% rownames_to_column(var = "increment") %>% mutate(ID = paste(ID, increment, sep = "_"))
+gt_matrix <- gt_matrix %>% rownames_to_column(var = "increment") 
 gt_matrix$increment <- NULL
 
 # recreate vcf file adding info about variant type

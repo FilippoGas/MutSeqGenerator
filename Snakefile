@@ -168,6 +168,8 @@ rule index_phased_vcf:
 
 # Download wild type sequences and annotations for protein coding genes
 rule download_wt_sequences:
+    conda:
+	"envs/Renv.yaml"	
     output:
         sequences = config["wt_sequences"]+"/wt_cds.RData",
         sequences_aa = config["wt_sequences"]+"/wt_aa.RData",

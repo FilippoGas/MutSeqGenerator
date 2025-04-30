@@ -132,6 +132,13 @@ rule phasing:
         # Map files name MUST be in the format "chr#.[genome_version].gmap.gz (i.e. "chr2.b38.gmap.gz")"
         config["shapeit5"] + " --input {input.vcf} --region $(echo '{input.map}' | cut -d '.' -f 1 | awk -F '/' '{{print $NF}}') --map {input.map} --filter-maf 0.01 --output {output.bcf} --thread {threads}"
 
+rule phased_bcf_to_vcf:
+    input:
+        config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf"
+    output:
+        config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.vcf.gz"
+    shell:
+        "bcftools view {input} -Oz -o {output}"
 
 # Sample lists are needed to split back vcf files per cancer type
 #

@@ -22,23 +22,17 @@ which_rows <- function(transcripts_anno, variants_coord, chr) {
                               variants_ID = as.character())
         
         for (transcript in unique(transcripts_anno$ensembl_transcript_id)) {
-                
                 exons <- transcripts_anno[which(transcripts_anno$ensembl_transcript_id==transcript),]
-                
                 for (exon in 1:nrow(exons)) {
-                        
                         start <- exons[exon,"exon_chrom_start"]
                         end <- exons[exon,"exon_chrom_end"]
-                        
                         IDs <- c(IDs,variants_coord[which(variants_coord$POS>=start &
                                                           variants_coord$POS<=end), "ID"])
-                        
                 }
                 new_row <- data.frame(transcript=transcript, variants_ID=toString(IDs, sep=','))
                 IDs <- NULL
                 results <- rbind(results, new_row)
         }
-        
         return(results)
         
 }
@@ -47,17 +41,12 @@ build_mutated_sequence <- function(wt_sequence, transcript_variants, strand) {
         
         # Check if this sample has variants in this transcripts, otherwise don't do anything
         if (nrow(transcript_variants)>0) {
-                
                 # Do SNPs first
                 SNPs <- transcript_variants[which(transcript_variants$TYPE=="SNP"),]
                 if (nrow(SNPs > 0)) {
-                        
                         for (SNP in 1:nrow(SNPs)) {
-                                
                                 wt_sequence <- apply_SNP(wt_sequence, SNPs[SNP,], strand)
-                                
                         }
-                        
                 }
                 # deletions
                 # Deletions will initially be signaled with a "D" on the bases that should be
@@ -65,32 +54,23 @@ build_mutated_sequence <- function(wt_sequence, transcript_variants, strand) {
                 # would complicate the placement of other variants 
                 deletions <- transcript_variants[which(transcript_variants$TYPE=="deletion"),]
                 if (nrow(deletions > 0)) {
-                        
                         for (deletion in 1:nrow(deletions)) {
                                 wt_sequence <- apply_deletion(wt_sequence, deletions[deletion,], strand)
                         }
-                        
                 }
                 
                 # Insertions
                 # In case of multiple deletions start from the one closer to 3' and proceed
                 # towards 5'
                 if (strand == 1) {
-                        
                         insertions <- transcript_variants[which(transcript_variants$TYPE=="insertion"),] %>% arrange(desc(POS))
-                        
                 }else{
-                        
                         insertions <- transcript_variants[which(transcript_variants$TYPE=="insertion"),] %>% arrange(POS)
-                        
                 }
-                
                 if (nrow(insertions > 0)) {
-                        
                         for (insertion in 1:nrow(insertions)) {
                                 wt_sequence <- apply_insertion(wt_sequence, insertions[insertion,], strand)
                         }
-                        
                 }
         }
         
@@ -119,17 +99,13 @@ apply_SNP <- function(wt_sequence, SNP, strand) {
                 #cat(paste("start",start,"end",end,"snp pos",SNP$POS,"\n"))
                 
                 if (as.numeric(SNP$POS)>=start & as.numeric(SNP$POS)<=end) {
-                        
                         # Found the exon where the variant is
                         variant_position <- variant_position + (as.numeric(SNP$POS) - start + 1)
                         # Exit for
                         break
-                        
                 }else{
-                        
                         # Exon not found. Add the exon length to variant position and look in the next exon
                         variant_position <- variant_position + (end - start + 1)
-                        
                 }
         }
         
@@ -138,42 +114,24 @@ apply_SNP <- function(wt_sequence, SNP, strand) {
                 # Apply the base substitution based on genotype
                 #cat(paste("applying snp from",SNP$REF,"to", SNP$ALT,"in position",variant_position,"\n"))
                 gt <- SNP[,5]
-                
                 if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                        
                         str_sub(sequence_1,variant_position,variant_position) <- SNP$ALT
-                        
                 }
-                
                 if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                        
                         str_sub(sequence_2,variant_position,variant_position) <- SNP$ALT
-                        
                 }
-                
         }else{
-                
                 variant_position <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"transcript_length"]) - variant_position + 1
                 # If we are in the reverse strand we add the complementary of the alternative base
-                
                 gt <- SNP[,5]
-                
                 if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                        
                         str_sub(sequence_1,variant_position,variant_position) <- complement(SNP$ALT)
-                        
                 }
-                
                 if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                        
                         str_sub(sequence_2,variant_position,variant_position) <- complement(SNP$ALT)
-                        
                 }
-                
                 #cat(paste("applying snp from",SNP$REF,"to", SNP$ALT,"in position",variant_position,"\n"))
-                
         }
-        
         return(paste(sequence_1, sequence_2, sep = "-"))
         
 }
@@ -199,28 +157,21 @@ apply_deletion <- function(wt_sequence, deletion, strand) {
                 #cat(paste("start",start,"end",end,"del pos",deletion$POS,"\n"))
                 
                 if (as.numeric(deletion$POS)>=start & as.numeric(deletion$POS)<=end) {
-                        
                         # Found the exon where the variant is
                         variant_start <- variant_start + (as.numeric(deletion$POS) - start + 1)
                         # Exit for
                         break
-                        
                 }else{
-                        
                         # Exon not found. Add the exon length to variant position and look in the next exon
                         variant_start <- variant_start + (end - start + 1)
-                        
                 }
         }
-        
+    
         # We need to understand if the deletion is confined to one exon or if it is big enough to
         # to exceed the exon and terminate in the intron.
         if (strand == 1) {
-                
                 variant_end <- variant_start + min(as.numeric(deletion$POS) + nchar(deletion$REF) - 1, exons[exon, "exon_chrom_end"]) - as.numeric(deletion$POS)
-                
         }else{
-                
                 variant_end <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"transcript_length"]) - variant_start
                 variant_start <- max(variant_end - nchar(deletion$REF) + 1, 1)
         }
@@ -230,15 +181,11 @@ apply_deletion <- function(wt_sequence, deletion, strand) {
         gt <- deletion[,5]
         
         if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                
                 str_sub(sequence_1,variant_start + 1, variant_end) <- strrep("D", nchar(deletion$REF) - 1)
-                
         }
         
         if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                
                 str_sub(sequence_2,variant_start + 1, variant_end) <- strrep("D", nchar(deletion$REF) - 1)
-                
         }
         
         wt_sequence <- paste(sequence_1, sequence_2, sep = "-")
@@ -265,47 +212,32 @@ apply_insertion <- function(wt_sequence, insertion, strand) {
                 #cat(paste("start",start,"end",end,"insertion pos",insertion$POS,"\n"))
                 
                 if (as.numeric(insertion$POS)>=start & as.numeric(insertion$POS)<=end) {
-                        
                         # Found the exon where the variant is
                         variant_position <- variant_position + (as.numeric(insertion$POS) - start + 1)
                         # Exit for
                         break
-                        
                 }else{
-                        
                         # Exon not found. Add the exon length to variant position and look in the next exon
                         variant_position <- variant_position + (end - start + 1)
-                        
                 }
         }
         
         if (strand == -1) {
-                
                 # Need to reverse and complement the sequence
                 variant <- reverse_complement(insertion$ALT)
-                
                 variant_position <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"transcript_length"]) - variant_position + 1
-                
         }else{
-                
                 variant <- insertion$ALT
                 
         }
-        
         # Apply the insertion  based on genotype
         #cat(paste("applying indel from",insertion$REF,"to", insertion$ALT,"in position",variant_position,"\n"))
         gt <- insertion[,5]
-        
         if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                
                 sequence_1 <- paste0(str_sub(sequence_1, 1, variant_position - 1), variant, str_sub(sequence_1, variant_position + 1, nchar(sequence_1)))
-                
         }
-        
         if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                
                 sequence_2 <- paste0(str_sub(sequence_2, 1, variant_position - 1), variant, str_sub(sequence_2, variant_position + 1, nchar(sequence_2)))
-                
         }
         
         return(paste(sequence_1, sequence_2, sep = "-"))

@@ -185,7 +185,7 @@ rule download_wt_sequences:
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
         names = config["wt_sequences"]+"/transcripts_name.txt"
     script:
-        "../scripts/sequences_generation/sequences_download.R"
+        "sequences_generation/sequences_download.R"
 
 # Given the phased vcf, and the trancripts of interest just downloaded, extract all 
 # the genotypes present in the population
@@ -197,7 +197,7 @@ rule extract_genotype:
     output:
         config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
     script:
-        "../scripts/sequences_generation/extract_genotype.R"
+        "sequences_generation/extract_genotype.R"
 
 # # Generate mutated nucleotide sequences for each chromosome
 # #

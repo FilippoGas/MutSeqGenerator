@@ -178,14 +178,14 @@ rule index_phased_vcf:
 # Download wild type sequences and annotations for protein coding genes
 rule download_wt_sequences:
     conda:
-	    "envs/Renv.yaml"	
+	    "../envs/Renv.yaml"	
     output:
         sequences = config["wt_sequences"]+"/wt_cds.RData",
         sequences_aa = config["wt_sequences"]+"/wt_aa.RData",
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
         names = config["wt_sequences"]+"/transcripts_name.txt"
     script:
-        "sequences_generation/sequences_download.R"
+        "../scripts/sequences_generation/sequences_download.R"
 
 # Given the phased vcf, and the trancripts of interest just downloaded, extract all 
 # the genotypes present in the population
@@ -197,7 +197,7 @@ rule extract_genotype:
     output:
         config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
     script:
-        "sequences_generation/extract_genotype.R"
+        "../scripts/sequences_generation/extract_genotype.R"
 
 # # Generate mutated nucleotide sequences for each chromosome
 # #
@@ -214,7 +214,7 @@ rule extract_genotype:
 #     output:
 #         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/nn/chr{chr}.RData"
 #     conda:
-#         "envs/Renv.yaml"
+#         "../envs/Renv.yaml"
 #     script:
 #         "sequences_generation/mutated_sequences.R"
 
@@ -228,7 +228,7 @@ rule extract_genotype:
 #     output:
 #         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
 #     conda:
-#         "envs/Renv.yaml"
+#         "../envs/Renv.yaml"
 #     script:
 #         "sequences_generation/translate_sequences.R"
 
@@ -247,7 +247,7 @@ rule extract_genotype:
 #         # is needed to create the ESM_inputs directory before R start.
 #         temp(config["data_folder"]+"/tumors/{cancer_type}/ESM_inputs/chr{chr}.txt")
 #     conda:
-#         "envs/Renv.yaml"
+#         "../envs/Renv.yaml"
 #     script:
 #         "sequences_evaluation/prepare_sequences_for_ESM.R"
 

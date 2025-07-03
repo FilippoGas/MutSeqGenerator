@@ -31,7 +31,7 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                                                            "allelic_count"=integer())
                         # Keep count of alternative haplotypes
                         hap_number <- 1
-                        
+        
                         # Extract exonic regions for the current transcript
                         # protein_coding_transcripts' exon coordinates
                         exon_regions <- protein_coding_transcripts %>% 
@@ -39,15 +39,17 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                             mutate(region = paste0("chr", chromosome_name, ":", exon_chrom_start, "-", exon_chrom_end)) %>% 
                             dplyr::select(region)
                         exon_regions <- paste0(exon_regions$region, collapse = ",")
+                        # Prepare bash command and collect result
+                        query <- paste0("bcftools query -f '[%CHROM\t%POS\t%REF\t%ALT\t%GT\t%SAMPLE\n]' -r ",exon_regions," ",  phased_vcf_path)
+                        res <- system(query, intern = TRUE)
                         
                         # For the given transcript check the genotype in all samples
                         for (sample in samples) {
-                            # Prepare bash command and collect result
-                            query <- paste0("bcftools query -f '[%CHROM\t%POS\t%REF\t%ALT\t%GT\n]' -r ",exon_regions, " -s ", sample, " ",  phased_vcf_path)
-                            res <- system(query, intern = TRUE)
                             # If sample has no variants, go to the next one
                             if (!is_empty(res)) {
-                                genotypes <- read.table(text = res, colClasses = "character")
+                                genotypes <- read.table(text = res, colClasses = "character") %>%
+                                    filter(V6==sample) %>% 
+                                    select(-c("V6"))
                                 colnames(genotypes) <- c("CHROM","POS", "REF", "ALT", "GT")
                                 for (allele in c(1,2)) {
                                     # Only keep genotypes different from REF for the allele that generate the sequence of interest

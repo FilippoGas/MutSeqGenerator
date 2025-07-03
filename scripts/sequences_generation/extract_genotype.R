@@ -19,7 +19,7 @@ load(anno_path)
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(chromosome_name==chr)
 
 # Initialize dataframe to store all haplotypes
-haplotype_ID <- data_frame("genotype"=character(),
+haplotype_ID <- data.frame("genotype"=character(),
                            "haplotype_id"=character(),
                            "allelic_count"=integer())
 
@@ -27,8 +27,7 @@ haplotype_ID <- data_frame("genotype"=character(),
 res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                 FUN = function(transcript){
                         # Keep track of which haplotypes appeared already
-                        haplotype_transcript <- data_frame("genotype"=character(),
-                                                           "haplotype_id"=character(),
+                        haplotype_transcript <- data.frame("haplotype_id"=character(),
                                                            "allelic_count"=integer())
                         # Keep count of alternative haplotypes
                         hap_number <- 1
@@ -38,7 +37,7 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                         exon_regions <- protein_coding_transcripts %>% 
                             filter(ensembl_transcript_id==transcript)%>% 
                             mutate(region = paste0("chr", chromosome_name, ":", exon_chrom_start, "-", exon_chrom_end)) %>% 
-                            select(region)
+                            dplyr::select(region)
                         exon_regions <- paste0(exon_regions$region, collapse = ",")
                         
                         # For the given transcript check the genotype in all samples
@@ -57,41 +56,44 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                                     allele_genotype <- allele_genotype %>% mutate(variants = paste0(CHROM, ":", POS, ".", REF, ">", ALT))
                                     allele_genotype <- paste0(allele_genotype$variants, collapse = ",")
                                     # Check if genotype is already saved
-                                    if (!allele_genotype %in% haplotype_transcript[,1]) {
+                                    if (is.na(haplotype_transcript[allele_genotype,1])) {
                                         # Register new haplotype, checking if it is canonical or alternative
                                         if(allele_genotype == ""){
                                             hap_id <- transcript
+                                            allele_genotype <- paste0(transcript, "_wt")
                                         }else{
                                             hap_id <- paste0(transcript, ".",hap_number)
                                             hap_number <- hap_number + 1
                                         }
-                                        haplotype_transcript <- rbind(haplotype_transcript, c(allele_genotype, hap_id, 1))
+                                        haplotype_transcript[allele_genotype,] <- c(hap_id, 1)
                                     # If already saved, increase its counter
                                     }else{
-                                        haplotype_transcript[which(haplotype_transcript[,1]==allele_genotype),3] <- as.numeric(haplotype_transcript[which(haplotype_transcript[,1]==allele_genotype),3]) + 1
+                                        haplotype_transcript[allele_genotype,2] <- as.numeric(haplotype_transcript[allele_genotype,2]) + 1
                                     }
                                 }
                             }else{
                                 # Check if canonical genotype is already saved
-                                allele_genotype <- ""
-                                if (!allele_genotype %in% haplotype_transcript[,1]) {
+                                allele_genotype <- paste0(transcript,"_wt")
+                                if (is.na(haplotype_transcript[allele_genotype,1])) {
                                     # Register new haplotype, checking if it is canonical or alternative
                                     hap_id <- transcript
-                                    haplotype_transcript <- rbind(haplotype_transcript, c(allele_genotype, hap_id, 1))
+                                    haplotype_transcript[allele_genotype,] <- c(hap_id, 1)
                                     # If already saved, increase its counter
                                 }else{
-                                    haplotype_transcript[which(haplotype_transcript[,1]==allele_genotype),3] <- as.numeric(haplotype_transcript[which(haplotype_transcript[,1]==allele_genotype),3]) + 1
+                                    haplotype_transcript[allele_genotype,2] <- as.numeric(haplotype_transcript[allele_genotype,2]) + 1
                                 }
                             }
                         }
-                        colnames(haplotype_transcript) <- c("genotype", "haplotype_id", "allelic_count")
-                        haplotype_ID <- rbind(haplotype_ID, haplotype_transcript)
+                        colnames(haplotype_transcript) <- c("haplotype_id", "allelic_count")
+                        return(haplotype_transcript)
                 },
                 mc.cores = cores,
                 mc.preschedule = TRUE,
                 mc.cleanup = TRUE)
 # Bind results
 haplotype_ID <- bind_rows(res)
+# Turn rownames into genotypes column name
+haplotype_ID <- haplotype_ID %>% rownames_to_column(var = "genotype") %>% mutate(genotype = ifelse(str_detect(genotype, "wt"), "wt", genotype))
 # Compute allelic frequency
 haplotype_ID <- haplotype_ID %>%
     mutate(freq=round(100*as.numeric(allelic_count)/(length(samples)*2),3),

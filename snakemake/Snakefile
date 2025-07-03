@@ -74,7 +74,7 @@ rule merge_tumors:
         index = expand(config["data_folder"]+"/tumors/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz.tbi", cancer_type = config["cancer_types"])
     output:
         temp(config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz")
-    threads: config["threads"]
+    threads: config["bcftools_threads"]
     shell:
         "bcftools merge --threads {threads} {input.vcf} -Oz -o {output}"
 
@@ -84,7 +84,7 @@ rule index_merged_tumors:
         rules.merge_tumors.output
     output:
         temp(config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz.tbi")
-    threads: config["threads"]
+    threads: config["bcftools_threads"]
     shell:
         "bcftools index -t {input}"
 
@@ -194,6 +194,7 @@ rule extract_genotype:
         phased_vcf = config["data_folder"]+"/phased_vcf/chr{chr}.phased.vcf.gz",
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
         samples = config["data_folder"]+"/phased_vcf/samples.txt"
+    threads: config["extract_genotype_cores"]
     output:
         config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
     script:

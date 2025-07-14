@@ -1,95 +1,79 @@
-# Filippo Gastaldello - 03/05/2024
+# Filippo Gastaldello - 03/07/2027
 
-# Generate mutated protein coding sequences for each sample given a vcf file and the sequences 
-# for all protein coding transcripts
+# Generate mutated protein coding sequences for each haplotype in the haplotype csv file
 
-# The final results are saved in dataframes divided per chromosome where rows are transcripts and 
-# columns are samples. Each cell contains 2 sequences separated by a semicolon.
 
 if(!require(tidyverse)) install.packages('tidyverse')
-if(!require(vcfR)) BiocManager::install('vcfR')
 
 
 # FUNCTIONS
 
 # Functions are placed first to let snakemake know they exist before running the code.
 
-# For each transcript identify the variants falling inside its exons
-which_rows <- function(transcripts_anno, variants_coord, chr) {
-        
-        IDs <- as.character()
-        results <- data.frame(transcript = as.character(),
-                              variants_ID = as.character())
-        
-        for (transcript in unique(transcripts_anno$ensembl_transcript_id)) {
-                exons <- transcripts_anno[which(transcripts_anno$ensembl_transcript_id==transcript),]
-                for (exon in 1:nrow(exons)) {
-                        start <- exons[exon,"exon_chrom_start"]
-                        end <- exons[exon,"exon_chrom_end"]
-                        IDs <- c(IDs,variants_coord[which(variants_coord$POS>=start &
-                                                          variants_coord$POS<=end), "ID"])
-                }
-                new_row <- data.frame(transcript=transcript, variants_ID=toString(IDs, sep=','))
-                IDs <- NULL
-                results <- rbind(results, new_row)
-        }
-        return(results)
-        
+# Turn the variants list from haplotype_ID into a df suitable for the next functions
+get_variant_df <- function(variant_list){
+    res <- lapply(str_split(variant_list, ",")[[1]], 
+                  function(variant){
+                    pos <- str_split_i(str_split_i(variant,":",2),"\\.",1)
+                    ref <- str_split_i(str_split_i(variant,"\\.",2),">",1)
+                    alt <- str_split_i(variant,">",2)
+                    type <- ifelse(nchar(ref)>nchar(alt),
+                                   "deletion",
+                                   ifelse(nchar(ref)<nchar(alt),
+                                          "insertion",
+                                          "SNP"))
+                    return(c("POS" = pos, "REF" = ref, "ALT" = alt, "TYPE" = type))
+    })
+    
+    res <- bind_rows(res)
+    return(res)
 }
 
 build_mutated_sequence <- function(wt_sequence, transcript_variants, strand) {
         
-        # Check if this sample has variants in this transcripts, otherwise don't do anything
-        if (nrow(transcript_variants)>0) {
-                # Do SNPs first
-                SNPs <- transcript_variants[which(transcript_variants$TYPE=="SNP"),]
-                if (nrow(SNPs > 0)) {
-                        for (SNP in 1:nrow(SNPs)) {
-                                wt_sequence <- apply_SNP(wt_sequence, SNPs[SNP,], strand)
-                        }
+        # Do SNPs first
+        SNPs <- transcript_variants[which(transcript_variants$TYPE=="SNP"),]
+        if (nrow(SNPs > 0)) {
+                for (SNP in 1:nrow(SNPs)) {
+                        wt_sequence <- apply_SNP(wt_sequence, SNPs[SNP,], strand)
                 }
-                # deletions
-                # Deletions will initially be signaled with a "D" on the bases that should be
-                # removed in order to not create shifts in the sequence coordinates that 
-                # would complicate the placement of other variants 
-                deletions <- transcript_variants[which(transcript_variants$TYPE=="deletion"),]
-                if (nrow(deletions > 0)) {
-                        for (deletion in 1:nrow(deletions)) {
-                                wt_sequence <- apply_deletion(wt_sequence, deletions[deletion,], strand)
-                        }
+        }
+        # deletions
+        # Deletions will initially be signaled with a "D" on the bases that should be
+        # removed in order to not create shifts in the sequence coordinates that 
+        # would complicate the placement of other variants 
+        deletions <- transcript_variants[which(transcript_variants$TYPE=="deletion"),]
+        if (nrow(deletions > 0)) {
+                for (deletion in 1:nrow(deletions)) {
+                        wt_sequence <- apply_deletion(wt_sequence, deletions[deletion,], strand)
                 }
-                
-                # Insertions
-                # In case of multiple deletions start from the one closer to 3' and proceed
-                # towards 5'
-                if (strand == 1) {
-                        insertions <- transcript_variants[which(transcript_variants$TYPE=="insertion"),] %>% arrange(desc(POS))
-                }else{
-                        insertions <- transcript_variants[which(transcript_variants$TYPE=="insertion"),] %>% arrange(POS)
-                }
-                if (nrow(insertions > 0)) {
-                        for (insertion in 1:nrow(insertions)) {
-                                wt_sequence <- apply_insertion(wt_sequence, insertions[insertion,], strand)
-                        }
+        }
+        
+        # Insertions
+        # In case of multiple deletions start from the one closer to 3' and proceed
+        # towards 5'
+        if (strand == 1) {
+                insertions <- transcript_variants[which(transcript_variants$TYPE=="insertion"),] %>% arrange(desc(POS))
+        }else{
+                insertions <- transcript_variants[which(transcript_variants$TYPE=="insertion"),] %>% arrange(POS)
+        }
+        if (nrow(insertions > 0)) {
+                for (insertion in 1:nrow(insertions)) {
+                        wt_sequence <- apply_insertion(wt_sequence, insertions[insertion,], strand)
                 }
         }
         
         # Split the two sequences to remove deletion placeholders
-        sequence_1 <- str_remove_all(str_split_1(wt_sequence, pattern = "-")[1], "D")
-        sequence_2 <- str_remove_all(str_split_1(wt_sequence, pattern = "-")[2], "D")
+        sequence <- str_remove_all(str_split_1(wt_sequence, pattern = "-")[1], "D")
         
-        return(paste(sequence_1, sequence_2, sep = "-"))
+        return(sequence)
 }
 
 apply_SNP <- function(wt_sequence, SNP, strand) {
         
         # Get all the exons composing the transcript
-        exons <- protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),] %>% arrange(exon_chrom_start)
+        exons <- protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==str_split_i(haplotype, "\\.",1)),] %>% arrange(exon_chrom_start)
         variant_position <- 0
-        
-        # Split the two sequences
-        sequence_1 <- str_split_1(wt_sequence, pattern = "-")[1]
-        sequence_2 <- str_split_1(wt_sequence, pattern = "-")[2]
         
         # Find variant position relative to sequence
         for (exon in 1:nrow(exons)) {
@@ -110,43 +94,23 @@ apply_SNP <- function(wt_sequence, SNP, strand) {
         }
         
         if (strand == 1) {
-                
-                # Apply the base substitution based on genotype
-                #cat(paste("applying snp from",SNP$REF,"to", SNP$ALT,"in position",variant_position,"\n"))
-                gt <- SNP[,5]
-                if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                        str_sub(sequence_1,variant_position,variant_position) <- SNP$ALT
-                }
-                if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                        str_sub(sequence_2,variant_position,variant_position) <- SNP$ALT
-                }
+                str_sub(wt_sequence,variant_position,variant_position) <- SNP$ALT
         }else{
-                variant_position <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"transcript_length"]) - variant_position + 1
+                variant_position <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==str_split_i(haplotype, "\\.", 1)),"transcript_length"]) - variant_position + 1
                 # If we are in the reverse strand we add the complementary of the alternative base
-                gt <- SNP[,5]
-                if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                        str_sub(sequence_1,variant_position,variant_position) <- complement(SNP$ALT)
-                }
-                if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                        str_sub(sequence_2,variant_position,variant_position) <- complement(SNP$ALT)
-                }
-                #cat(paste("applying snp from",SNP$REF,"to", SNP$ALT,"in position",variant_position,"\n"))
+                str_sub(wt_sequence,variant_position,variant_position) <- complement(SNP$ALT)
         }
-        return(paste(sequence_1, sequence_2, sep = "-"))
+        return(wt_sequence)
         
 }
 
 apply_deletion <- function(wt_sequence, deletion, strand) {
         
         # Get all the exons composing the transcript
-        exons <- protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),] %>% arrange(exon_chrom_start)
+        exons <- protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==str_split_i(haplotype, "\\.",1)),] %>% arrange(exon_chrom_start)
         
         variant_start <- 0
         variant_end <- 0
-        
-        # Split the two sequences
-        sequence_1 <- str_split_1(wt_sequence, pattern = "-")[1]
-        sequence_2 <- str_split_1(wt_sequence, pattern = "-")[2]
         
         exon <- 0
         
@@ -154,7 +118,6 @@ apply_deletion <- function(wt_sequence, deletion, strand) {
                 
                 start <- exons[exon, "exon_chrom_start"]
                 end <- exons[exon, "exon_chrom_end"]
-                #cat(paste("start",start,"end",end,"del pos",deletion$POS,"\n"))
                 
                 if (as.numeric(deletion$POS)>=start & as.numeric(deletion$POS)<=end) {
                         # Found the exon where the variant is
@@ -172,23 +135,11 @@ apply_deletion <- function(wt_sequence, deletion, strand) {
         if (strand == 1) {
                 variant_end <- variant_start + min(as.numeric(deletion$POS) + nchar(deletion$REF) - 1, exons[exon, "exon_chrom_end"]) - as.numeric(deletion$POS)
         }else{
-                variant_end <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"transcript_length"]) - variant_start
+                variant_end <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==str_split_i(haplotype, "\\.",1)),"transcript_length"]) - variant_start
                 variant_start <- max(variant_end - nchar(deletion$REF) + 1, 1)
         }
         
-        # Apply deletion based on variant genotype
-        #cat(paste("applying del from",deletion$REF,"to", deletion$ALT,"from position",variant_start,"to position",variant_end,"\n"))
-        gt <- deletion[,5]
-        
-        if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                str_sub(sequence_1,variant_start + 1, variant_end) <- strrep("D", nchar(deletion$REF) - 1)
-        }
-        
-        if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                str_sub(sequence_2,variant_start + 1, variant_end) <- strrep("D", nchar(deletion$REF) - 1)
-        }
-        
-        wt_sequence <- paste(sequence_1, sequence_2, sep = "-")
+        str_sub(wt_sequence,variant_start + 1, variant_end) <- strrep("D", nchar(deletion$REF) - 1)
         
         return(wt_sequence)
         
@@ -197,19 +148,14 @@ apply_deletion <- function(wt_sequence, deletion, strand) {
 apply_insertion <- function(wt_sequence, insertion, strand) {
         
         # Get all the exons composing the transcript
-        exons <- protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),] %>% arrange(exon_chrom_start)
+        exons <- protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==str_split_i(haplotype, "\\.",1)),] %>% arrange(exon_chrom_start)
         variant_position <- 0
-        
-        # Split the two sequences
-        sequence_1 <- str_split_1(wt_sequence, pattern = "-")[1]
-        sequence_2 <- str_split_1(wt_sequence, pattern = "-")[2]
         
         # Find variant position relative to sequence
         for (exon in 1:nrow(exons)) {
                 
                 start <- exons[exon, "exon_chrom_start"]
                 end <- exons[exon, "exon_chrom_end"]
-                #cat(paste("start",start,"end",end,"insertion pos",insertion$POS,"\n"))
                 
                 if (as.numeric(insertion$POS)>=start & as.numeric(insertion$POS)<=end) {
                         # Found the exon where the variant is
@@ -225,22 +171,14 @@ apply_insertion <- function(wt_sequence, insertion, strand) {
         if (strand == -1) {
                 # Need to reverse and complement the sequence
                 variant <- reverse_complement(insertion$ALT)
-                variant_position <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"transcript_length"]) - variant_position + 1
+                variant_position <- unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==str_split_i(haplotype, "\\.",1)),"transcript_length"]) - variant_position + 1
         }else{
                 variant <- insertion$ALT
                 
         }
         # Apply the insertion  based on genotype
-        #cat(paste("applying indel from",insertion$REF,"to", insertion$ALT,"in position",variant_position,"\n"))
-        gt <- insertion[,5]
-        if (as.numeric(str_split_i(gt,pattern ="|",2)) == 1) {
-                sequence_1 <- paste0(str_sub(sequence_1, 1, variant_position - 1), variant, str_sub(sequence_1, variant_position + 1, nchar(sequence_1)))
-        }
-        if (as.numeric(str_split_i(gt,pattern ="|",4)) == 1) {
-                sequence_2 <- paste0(str_sub(sequence_2, 1, variant_position - 1), variant, str_sub(sequence_2, variant_position + 1, nchar(sequence_2)))
-        }
-        
-        return(paste(sequence_1, sequence_2, sep = "-"))
+        wt_sequence <- paste0(str_sub(wt_sequence, 1, variant_position - 1), variant, str_sub(wt_sequence, variant_position + 1, nchar(wt_sequence)))
+        return(wt_sequence)
         
 }
 
@@ -269,55 +207,18 @@ reverse_complement <- function(sequence) {
 # load transcript sequences, annotations, samples list and vcf file
 load(snakemake@input[["wt_cds"]])
 load(snakemake@input[["annotations"]])
-sample_list <- read_delim(snakemake@input[["samples_list"]], delim = "\n", col_names = FALSE)$X1
-vcf <- read.vcfR(file = snakemake@input[["vcf"]])
-
-# Extract chromosome name from vcf filename and cancer type from sample list filename
-chr <- snakemake@input[["vcf"]] %>% str_split_i(pattern = "chr", 2) %>% str_split_i(pattern = ".vcf", 1)
-cancer_type <- snakemake@input[["samples_list"]] %>% str_split_i(pattern = "tumors/", 2) %>% str_split_i(pattern = "/", 1)
+sample_list <- read_lines(snakemake@input[["samples"]])
+haplotype_ID <- read_csv(snakemake@input[["haplotypes"]])
+haplotype_ID <- haplotype_ID %>% column_to_rownames(var = "haplotype_id")
+# Extract chromosome name from haplotype filename
+chr <- snakemake@input[["haplotypes"]] %>% str_split_i(pattern = "chr", 2) %>% str_split_i(pattern = ".csv", 1)
 
 # Subset wild type sequences and transcript annotations only to genes in the current chromosome
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(chromosome_name == chr)
-sequences <- sequences[sequences$ensembl_transcript_id %in% unique(protein_coding_transcripts$ensembl_transcript_id),]
+sequences <- sequences %>% filter(ensembl_transcript_id %in% unique(protein_coding_transcripts$ensembl_transcript_id))
 
-rownames(sequences) <- sequences$ensembl_transcript_id
-sequences$ensembl_transcript_id <- NULL
-
-# Initialize dataframe to store mutated sequences
-mutated_sequences <- data.frame(matrix(ncol = length(sample_list), nrow = length(sequences$sequence)))
-rownames(mutated_sequences) <- rownames(sequences)
-colnames(mutated_sequences) <- sample_list
-
-# extract genotype information
-gt_matrix <- data.frame(extract.gt(vcf)) %>% rownames_to_column(var = "ID")
-
-# extract variant descriptions and create same ID present in 'gt_matrix' to 
-# link variants to genotypes
-variant_anno <- getFIX(vcf) %>% as.data.frame() %>% 
-                          dplyr::select(CHROM, POS, REF, ALT) %>%
-                          mutate(ID = paste(CHROM, POS, sep = "_"))
-
-variant_anno <- variant_anno %>% rownames_to_column(var = "increment")
-variant_anno <- variant_anno %>% mutate(ID = paste(ID, increment, sep = "_"))
-
-gt_matrix <- gt_matrix %>% rownames_to_column(var = "increment") 
-gt_matrix$increment <- NULL
-
-# recreate vcf file adding info about variant type
-variants <- variant_anno %>% left_join(gt_matrix, by = "ID")
-rownames(variants) <- variants$ID
-variants <- variants %>% mutate(TYPE = ifelse(nchar(ALT)>1, "insertion", ifelse(nchar(REF)>1, "deletion", "SNP")))
-variants <- variants %>% relocate(TYPE, .after = ALT)
-variants$increment <- NULL
-
-rm(vcf, gt_matrix, variant_anno)
-
-# for each transcript find the ID of the variants affecting it
-variants_coord <- variants %>% dplyr::select(CHROM, POS, ID)
-variants$ID <- NULL
-variants_ID <- which_rows(protein_coding_transcripts, variants_coord, chr)
-rownames(variants_ID) <- variants_ID$transcript
-variants_ID$transcript <- NULL
+# Use ensembl transcript id as rowname
+sequences <- sequences %>% column_to_rownames(var = "ensembl_transcript_id")
 
 # time tracking
 start_time <- Sys.time()
@@ -325,46 +226,40 @@ start_time <- Sys.time()
 # set up counters to follow execution progress
 count <- 0; q1 <- FALSE; q2 <- FALSE; q3 <- FALSE
 
-# Switch from dot notation to dash notation in colnames(variants)
-colnames(variants) <- gsub("\\.", "-", colnames(variants))
-
-
-for (sample in sample_list) {
-  
-        for (transcript in unique(protein_coding_transcripts$ensembl_transcript_id)) {
+for (haplotype in rownames(haplotype_ID)) {
         
-                # get the IDs of variants affecting transcript
-                IDs <- str_split_1(variants_ID[transcript, 1], pattern = ", ")
-                
-                mutated_sequences[transcript, sample] <- build_mutated_sequence(paste(sequences[transcript, 'sequence'],sequences[transcript,'sequence'], sep = "-"),
-                                                                              variants[IDs, c("POS", "REF", "ALT", "TYPE", sample)] %>% filter(!!as.name(sample) != "0|0"),
-                                                                              unique(protein_coding_transcripts[which(protein_coding_transcripts$ensembl_transcript_id==transcript),"strand"]))
-        }
-
-        # print progress
-        step_time <- Sys.time()
-        duration <- difftime(step_time, start_time, units = "sec")
-        count <- count + 1
-        
-        
-        if (count/length(sample_list)*100 > 25 & !q1) {
-                cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 25%", "in", round(seconds_to_period(duration), 2)," \n"))
-                q1 <- TRUE
-        }
-        if (count/length(sample_list)*100 > 50 & !q2) {
-                cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 50%", "in", round(seconds_to_period(duration), 2)," \n"))
-                q2 <- TRUE
-        }
-        if (count/length(sample_list)*100 > 75 & !q3) {
-                cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 75%", "in", round(seconds_to_period(duration), 2)," \n"))
-                q3 <- TRUE
-        }
-
+        # Only compute sequence if haplotype is not wt
+        haplotype_ID[haplotype, "nn_sequence"] <- ifelse(str_detect(haplotype, "\\."),
+                                                            build_mutated_sequence(sequences[str_split_i(haplotype, "\\.", 1),"sequence"],
+                                                                                   get_variant_df(haplotype_ID[haplotype, "variants"]),
+                                                                                   haplotype_ID[haplotype, "strand"]
+                                                                                   ),
+                                                            sequences[haplotype, "sequence"]
+                                                            )
 }
+
+# print progress
+step_time <- Sys.time()
+duration <- difftime(step_time, start_time, units = "sec")
+count <- count + 1
+
+
+if (count/length(rownames(haplotype_ID))*100 > 25 & !q1) {
+        cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 25%", "in", round(seconds_to_period(duration), 2)," \n"))
+        q1 <- TRUE
+}
+if (count/length(rownames(haplotype_ID))*100 > 50 & !q2) {
+        cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 50%", "in", round(seconds_to_period(duration), 2)," \n"))
+        q2 <- TRUE
+}
+if (count/length(rownames(haplotype_ID))*100 > 75 & !q3) {
+        cat(paste("GENERATION: Chromosome", chr, "from", cancer_type, "at 75%", "in", round(seconds_to_period(duration), 2)," \n"))
+        q3 <- TRUE
+}
+        
 # print total elapsed time
 end_time <- Sys.time()
 duration <- difftime(end_time, start_time, units = "sec")
 
-mutated_sequences <- mutated_sequences %>% drop_na()
-save(mutated_sequences, file = snakemake@output[[1]])
-cat(paste("GENERATION: Done chromosome", chr," from", cancer_type, ". Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
+write_csv(haplotype_ID, file = snakemake@output[[1]])
+cat(paste("GENERATION: Done chromosome", chr, ". Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))

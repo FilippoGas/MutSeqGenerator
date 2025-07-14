@@ -8,8 +8,10 @@ def get_transcripts_name(path_to_file):
 rule all:
     # Set output of last rule, or any independent rule (like download_wt_sequences) as input
     input:
-        # extract genotypes
-        expand(config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv", chr=range(1,23))
+        # extract genotypes and mutated_sequences
+        expand(config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv", chr=range(1,23)),
+        expand(config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv", chr=range(1,23))
+
 # Filter variants botg in the SNP and INDEL vcf files, only keeping variants with a recalibrated variant quality score
 # above 99.9
 rule filter:
@@ -196,29 +198,25 @@ rule extract_genotype:
         samples = config["data_folder"]+"/phased_vcf/samples.txt"
     threads: config["extract_genotype_cores"]
     output:
-        config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv",
+        genotypes = config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv"
+    conda:
+        "../envs/Renv.yaml"
     script:
         "../scripts/sequences_generation/extract_genotype.R"
 
-# # Generate mutated nucleotide sequences for each chromosome
-# #
-# # WARNING: the path of the output file is used in translate_sequences.R to extract
-# #          cancer type and chromosome. If the path is changed modify the R script 
-# #          accordingly.
-# rule generate_sequences:
-#     input:
-#         wt_cds = config["wt_sequences"]+"/wt_cds.RData",
-#         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
-#         samples_list = rules.get_sample_lists_per_cancer_type.output,
-#         vcf = rules.split_cancer_types.output,
-#         index = rules.index_phased_vcf.output
-#     output:
-#         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/nn/chr{chr}.RData"
-#     conda:
-#         "../envs/Renv.yaml"
-#     script:
-#         "sequences_generation/mutated_sequences.R"
-
+rule generate_sequences:
+    input:
+        wt_cds = config["wt_sequences"]+"/wt_cds.RData",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
+        samples = config["data_folder"]+"/phased_vcf/samples.txt",
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv"
+    output:
+        config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+    conda:
+        "../envs/Renv.yaml"
+    script:
+        "../scripts/sequences_generation/mutated_sequences.R"
 
 # # Translate the mutated nucleotide sequences
 # rule translate_sequences:
@@ -251,4 +249,3 @@ rule extract_genotype:
 #         "../envs/Renv.yaml"
 #     script:
 #         "sequences_evaluation/prepare_sequences_for_ESM.R"
-

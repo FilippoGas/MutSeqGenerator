@@ -198,7 +198,7 @@ rule extract_genotype:
         samples = config["data_folder"]+"/phased_vcf/samples.txt"
     threads: config["extract_genotype_cores"]
     output:
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv",
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_extract_genotype_chr{chr}.csv",
         genotypes = config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv"
     conda:
         "../envs/Renv.yaml"
@@ -210,42 +210,21 @@ rule generate_sequences:
         wt_cds = config["wt_sequences"]+"/wt_cds.RData",
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
         samples = config["data_folder"]+"/phased_vcf/samples.txt",
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv"
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_extract_genotype_chr{chr}.csv"
     output:
-        config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+        temp(config["data_folder"]+"/haplotypes/haplotypes_generate_sequences_chr{chr}.csv")
     conda:
         "../envs/Renv.yaml"
     script:
         "../scripts/sequences_generation/mutated_sequences.R"
 
-# # Translate the mutated nucleotide sequences
-# rule translate_sequences:
-#     input:
-#         wt_cds = config["wt_sequences"]+"/wt_cds.RData",
-#         annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
-#         mutated_cds = rules.generate_sequences.output
-#     output:
-#         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
-#     conda:
-#         "../envs/Renv.yaml"
-#     script:
-#         "sequences_generation/translate_sequences.R"
-
-
-# # Prepare sequences for ESM evaluation. For each cancer type, generates one csv for 
-# # each transcript containing its unique haplotypes.
-# #
-# # This output is fake, it's needed to trick snakemake into thinking that there is a 1-1 
-# # relationship between input and output. Internally the scripts is actually saving more output
-# # for each input, and only at the end generates the temporary output required by snakemake.
-# rule prepare_esm_input:
-#     input:  
-#         config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
-#     output:
-#         # Inside the R script the name of the transcript is attached to this path, this fake 
-#         # is needed to create the ESM_inputs directory before R start.
-#         temp(config["data_folder"]+"/tumors/{cancer_type}/ESM_inputs/chr{chr}.txt")
-#     conda:
-#         "../envs/Renv.yaml"
-#     script:
-#         "sequences_evaluation/prepare_sequences_for_ESM.R"
+# Translate the mutated nucleotide sequences
+rule translate_sequences:
+    input:
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_generate_sequences_chr{chr}.csv"
+    output:
+        config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+    conda:
+        "../envs/Renv.yaml"
+    script:
+        "sequences_generation/translate_sequences.R"

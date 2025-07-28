@@ -135,6 +135,30 @@ haplotype_ID <- haplotype_ID %>%
         relocate(freq, .after = allelic_count) %>%
         relocate(ensembl_gene_id, .before = ensembl_transcript_id)
 
+# Make haplotype id as function of gene id instead of transcript id
+new_id <- haplotype_ID %>% 
+        select(ensembl_gene_id, variants) %>%
+        unique() %>%
+        group_by(ensembl_gene_id) %>%
+        mutate(hap_number = row_number(ensembl_gene_id),
+               hap_number = ifelse(hap_number > 1, paste0(".", hap_number-1),""),
+               gene_haplotype_id = paste0(ensembl_gene_id, hap_number)) %>% 
+        ungroup() %>% 
+        filter(!variants=="wt") %>% 
+        select(-c(ensembl_gene_id)) %>% 
+        mutate(join_id = paste0(variants, str_split_i(gene_haplotype_id, "\\.", 1))) %>% 
+        select(-c(variants, hap_number))
+
+# Add new id
+haplotype_ID <- haplotype_ID %>%
+        mutate(join_id = paste0(variants, ensembl_gene_id)) %>% 
+        left_join(new_id, by = "join_id") 
+haplotype_ID <- haplotype_ID %>%
+        mutate(gene_haplotype_id = ifelse(is.na(gene_haplotype_id), ensembl_gene_id, gene_haplotype_id)) %>% 
+        dplyr::rename("transcript_haplotype_id"="haplotype_id") %>% 
+        relocate(gene_haplotype_id, .after = ensembl_transcript_id) %>% 
+        select(-c(join_id))
+
 # Save result
 write_csv(haplotype_ID, file = snakemake@output[["haplotypes"]])
 write_csv(genotypes, file = snakemake@output[["genotypes"]])

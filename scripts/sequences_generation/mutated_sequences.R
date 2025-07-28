@@ -209,7 +209,7 @@ load(snakemake@input[["wt_cds"]])
 load(snakemake@input[["annotations"]])
 sample_list <- read_lines(snakemake@input[["samples"]])
 haplotype_ID <- read_csv(snakemake@input[["haplotypes"]])
-haplotype_ID <- haplotype_ID %>% column_to_rownames(var = "haplotype_id")
+haplotype_ID <- haplotype_ID %>% column_to_rownames(var = "gene_haplotype_id")
 # Extract chromosome name from haplotype filename
 chr <- snakemake@input[["haplotypes"]] %>% str_split_i(pattern = "chr", 2) %>% str_split_i(pattern = ".csv", 1)
 

@@ -2,11 +2,10 @@
 
 # Translate sequences for each haplotype
 
-if(!require(Biostrings)) BiocManager::install("Biostrings")
-if(!require(tidyverse)) install.packages("tidyverse")
-if(!require(Biostrings)) BiocManager::install("Biostrings")
+library(tidyverse)
+library(Biostrings)
 # Load haplotypes and sequences
-read_csv(snakemake@input[["haplotypes"]])
+haplotype_ID <- read_csv(snakemake@input[["haplotypes"]])
 
 # Extract chromosome name from input files
 chr <- str_split_i(snakemake@input[["mutated_cds"]], pattern = "chr", 2) %>% str_split_i(pattern = ".csv", 1)

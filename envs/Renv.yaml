@@ -8,3 +8,4 @@ dependencies:
  - r-vcfr=1.15.0
  - r-biocmanager=1.30.23
  - bioconductor-biostrings=2.66.0
+ - bioconductor-biomart=2.54.0

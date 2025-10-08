@@ -1,16 +1,14 @@
 configfile: "config.yaml"
 
-def get_transcripts_name(path_to_file):
-    with open(path_to_file, "r") as f:
-        names = [line.strip() for line in f]
-    return names
-
 rule all:
     # Set output of last rule, or any independent rule (like download_wt_sequences) as input
     input:
-        # extract genotypes and mutated_sequences
-        expand(config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv", chr=range(1,23)),
-        expand(config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv", chr=range(1,23))
+        # sequences translation
+        expand(config["data_folder"]+"/haplotypes/haplotypes_aa_chr{chr}.csv", chr = range(1,23)),
+        # transcripts annotations and sequences download
+        config["wt_sequences"]+"/wt_cds.csv",
+        config["wt_sequences"]+"/wt_aa.csv",
+        config["wt_sequences"]+"/protein_coding_transcripts.csv"
 
 # Filter variants botg in the SNP and INDEL vcf files, only keeping variants with a recalibrated variant quality score
 # above 99.9
@@ -182,37 +180,35 @@ rule download_wt_sequences:
     conda:
 	    "../envs/Renv.yaml"	
     output:
-        sequences = config["wt_sequences"]+"/wt_cds.RData",
-        sequences_aa = config["wt_sequences"]+"/wt_aa.RData",
-        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
-        names = config["wt_sequences"]+"/transcripts_name.txt"
+        sequences = config["wt_sequences"]+"/wt_cds.csv",
+        sequences_aa = config["wt_sequences"]+"/wt_aa.csv",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv"
     script:
         "../scripts/sequences_generation/sequences_download.R"
 
 # Given the phased vcf, and the trancripts of interest just downloaded, extract all 
 # the genotypes present in the population
-rule extract_genotype:
+rule extract_haplotypes:
     input:
-        phased_vcf = config["data_folder"]+"/phased_vcf/chr{chr}.phased.vcf.gz",
-        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
+        phased_vcf = config["data_folder"]+"/phased_vcf/chr{chr}.phased.ann.vcf.gz",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv",
         samples = config["data_folder"]+"/phased_vcf/samples.txt"
     threads: config["extract_genotype_cores"]
     output:
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_extract_genotype_chr{chr}.csv",
-        genotypes = config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv"
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
     conda:
         "../envs/Renv.yaml"
     script:
-        "../scripts/sequences_generation/extract_genotype.R"
+        "../scripts/sequences_generation/extract_haplotype.R"
 
 rule generate_sequences:
     input:
-        wt_cds = config["wt_sequences"]+"/wt_cds.RData",
-        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
-        samples = config["data_folder"]+"/phased_vcf/samples.txt",
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_extract_genotype_chr{chr}.csv"
+        wt_cds = config["wt_sequences"]+"/wt_cds.csv",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv",
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
     output:
-        temp(config["data_folder"]+"/haplotypes/haplotypes_generate_sequences_chr{chr}.csv")
+        config["data_folder"]+"/haplotypes/haplotypes_nn_chr{chr}.csv"
+    threads: config["generate_sequences_cores"]
     conda:
         "../envs/Renv.yaml"
     script:
@@ -221,10 +217,10 @@ rule generate_sequences:
 # Translate the mutated nucleotide sequences
 rule translate_sequences:
     input:
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_generate_sequences_chr{chr}.csv"
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_nn_chr{chr}.csv"
     output:
-        config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+        config["data_folder"]+"/haplotypes/haplotypes_aa_chr{chr}.csv"
     conda:
         "../envs/Renv.yaml"
     script:
-        "sequences_generation/translate_sequences.R"
+        "../scripts/sequences_generation/translate_sequences.R"

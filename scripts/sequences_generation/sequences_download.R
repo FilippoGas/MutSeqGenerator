@@ -3,8 +3,8 @@
 # Use biomaRt to download annotations and sequences of all human protein coding
 # transcripts (non MT) together with transcript annotations
 
-if(!require(tidyverse)) install.packages("tidyverse")
-if(!require(biomaRt)) BiocManager::install("biomaRt")
+library(tidyverse)
+library(biomaRt)
 
 ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
 
@@ -14,13 +14,30 @@ ensembl_attributes <- listAttributes(ensembl)
 # get ensembl ID of all protein coding transcripts
 protein_coding_transcripts_featurepage <- getBM(attributes = c("ensembl_transcript_id",
                                                                "hgnc_symbol",
+                                                               "transcript_tsl",
                                                                "chromosome_name",
                                                                "start_position",
                                                                "end_position",
-                                                               "strand"),
+                                                               "strand",
+                                                               "transcript_biotype",
+                                                               "uniprot_gn_id",
+                                                               "uniprot_isoform"),
                                                 filters = "biotype",
                                                 values = "protein_coding",
-                                                mart = ensembl)
+                                                mart = ensembl,
+                                                useCache=FALSE)
+
+# remove:
+# transcript with tsl>3 
+# non protein transcripts (retained introns and non coding exons only composed by UTRs)
+# transcripts non aligned to chromosomes
+# mitochondrial transcripts
+protein_coding_transcripts <- protein_coding_transcripts_featurepage %>% filter(transcript_biotype=="protein_coding",
+                                                                                transcript_tsl=="tsl1" |
+                                                                                transcript_tsl=="tsl2" |
+                                                                                transcript_tsl=="tsl3",
+                                                                                !chromosome_name == "MT",
+                                                                                str_detect(chromosome_name, regex("^\\d{1,2}$")))
 
 # get coordinate information for CDS of the previously retrieved transcripts
 protein_coding_transcripts_structurepage <- getBM(attributes = c("ensembl_gene_id",
@@ -35,21 +52,13 @@ protein_coding_transcripts_structurepage <- getBM(attributes = c("ensembl_gene_i
                                                                  "3_utr_end",
                                                                  "exon_chrom_start",
                                                                  "exon_chrom_end"),
-                                                  filters = "biotype",
-                                                  values = "protein_coding",
+                                                  filters = "ensembl_transcript_id",
+                                                  values = protein_coding_transcripts$ensembl_transcript_id,
                                                   mart = ensembl)
 
 # merge annotation together
 protein_coding_transcripts <- protein_coding_transcripts_structurepage %>% left_join(protein_coding_transcripts_featurepage, by = "ensembl_transcript_id")
 
-# remove transcript without any of peptide_id, exon_chrom_start/end, 
-# non protein transcripts (retained introns and non coding exons only composed by UTRs)
-# and transcripts non aligned to chromosomes
-protein_coding_transcripts <- protein_coding_transcripts %>% filter(!is.na(ensembl_peptide_id),
-                                                                    !is.na(exon_chrom_start),
-                                                                    !is.na(exon_chrom_end),
-                                                                    !chromosome_name == "MT",
-                                                                    str_detect(chromosome_name, regex("^\\d{1,2}$")))
 
 # prepare dataframe to store sequences both with, and without UTRs
 sequences <- data.frame(coding = character(),
@@ -100,14 +109,14 @@ sequences_aa <- sequences_aa %>% dplyr::rename(sequence = peptide)
 
 # Discard transcripts without sequence
 sequences <- sequences %>% filter(!sequence=="Sequence unavailable")
+sequences$coding <- NULL
 sequences_aa <- sequences_aa %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 
 # save sequences and annotations to files to path specified in snakemake "download_wt_sequences" rule.
-write(sequences$ensembl_transcript_id, file = snakemake@output[["names"]])
-save(sequences, file = snakemake@output[["sequences"]])
-save(sequences_aa, file = snakemake@output[["sequences_aa"]])
-save(protein_coding_transcripts, file = snakemake@output[["annotations"]])
+write_csv(sequences, file = snakemake@output[["sequences"]])
+write_csv(sequences_aa, file = snakemake@output[["sequences_aa"]])
+write_csv(protein_coding_transcripts, file = snakemake@output[["annotations"]])
 
 
 

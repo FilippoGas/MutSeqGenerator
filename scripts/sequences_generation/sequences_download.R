@@ -6,7 +6,7 @@
 library(tidyverse)
 library(biomaRt)
 
-ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl")
+ensembl <- useEnsembl(biomart = "genes", dataset = "hsapiens_gene_ensembl", version = 113)
 
 ensembl_filters <- listFilters(ensembl)
 ensembl_attributes <- listAttributes(ensembl)
@@ -20,9 +20,8 @@ protein_coding_transcripts_featurepage <- getBM(attributes = c("ensembl_transcri
                                                                "end_position",
                                                                "strand",
                                                                "transcript_biotype",
-                                                               "uniprot_gn_id",
                                                                "uniprot_isoform"),
-                                                filters = "biotype",
+                                                filters = "transcript_biotype",
                                                 values = "protein_coding",
                                                 mart = ensembl,
                                                 useCache=FALSE)
@@ -32,8 +31,7 @@ protein_coding_transcripts_featurepage <- getBM(attributes = c("ensembl_transcri
 # non protein transcripts (retained introns and non coding exons only composed by UTRs)
 # transcripts non aligned to chromosomes
 # mitochondrial transcripts
-protein_coding_transcripts <- protein_coding_transcripts_featurepage %>% filter(transcript_biotype=="protein_coding",
-                                                                                transcript_tsl=="tsl1" |
+protein_coding_transcripts <- protein_coding_transcripts_featurepage %>% filter(transcript_tsl=="tsl1" |
                                                                                 transcript_tsl=="tsl2" |
                                                                                 transcript_tsl=="tsl3",
                                                                                 !chromosome_name == "MT",
@@ -61,12 +59,16 @@ protein_coding_transcripts <- protein_coding_transcripts_structurepage %>% left_
 
 
 # prepare dataframe to store sequences both with, and without UTRs
-sequences <- data.frame(coding = character(),
+sequences_cds <- data.frame(coding = character(),
+                        ensembl_transcript_id = character())
+sequences_3utr <- data.frame('3utr' = character(),
+                        ensembl_transcript_id = character())
+sequences_5utr <- data.frame('5utr' = character(),
                         ensembl_transcript_id = character())
 sequences_aa <- data.frame(peptide = character(),
                         ensembl_transcript_id = character())
 # get sequence for every transcript (cycle at batches of size 'stepsize' transcripts to avoid time out)
- stepsize <- 10000; start <- 1; end <- stepsize; done <- FALSE
+stepsize <- 10000; start <- 1; end <- stepsize; done <- FALSE
 
 # time tracking
 start_time <- Sys.time()
@@ -80,10 +82,18 @@ while (!done) {
   }
   
   # concat new sequences to existing dataframe
-  sequences <- bind_rows(sequences, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
-                           type = "ensembl_transcript_id",
-                           seqType = "cdna",
-                           mart = ensembl))
+  sequences_cds <- bind_rows(sequences_cds, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
+                                                    type = "ensembl_transcript_id",
+                                                    seqType = "coding",
+                                                    mart = ensembl))
+  sequences_5utr <- bind_rows(sequences_5utr, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
+                                                    type = "ensembl_transcript_id",
+                                                    seqType = "5utr",
+                                                    mart = ensembl))
+  sequences_3utr <- bind_rows(sequences_3utr, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
+                                                     type = "ensembl_transcript_id",
+                                                     seqType = "3utr",
+                                                     mart = ensembl))
   sequences_aa <- bind_rows(sequences_aa, getSequence(id = unique(protein_coding_transcripts$ensembl_transcript_id)[start:end],
                                                 type = "ensembl_transcript_id",
                                                 seqType = "peptide",
@@ -102,14 +112,23 @@ end_time <- Sys.time()
 duration <- difftime(end_time, start_time, units = "sec")
 cat(paste("Total elapsed time:", round(seconds_to_period(duration), 2), "\n"))
 
+sequences_3utr$X3utr <- NULL
+sequences_5utr$X5utr <- NULL
+
+# Merge 5utr cds and 3utr
+sequences <- sequences_5utr %>% left_join(sequences_cds, by = 'ensembl_transcript_id')
+sequences <- sequences %>% left_join(sequences_3utr, by = 'ensembl_transcript_id')
+
+# Remove transcripts with unavailable sequences
+sequences <- sequences %>% filter(!`5utr`=="Sequence unavailable")
+sequences <- sequences %>% filter(!`3utr`=="Sequence unavailable")
+sequences <- sequences %>% filter(!coding=="Sequence unavailable")
+
 # merge transcript annotations with sequences
-sequences <- sequences %>% dplyr::rename(sequence = cdna)
 sequences_aa <- sequences_aa %>% dplyr::rename(sequence = peptide)
 
 
 # Discard transcripts without sequence
-sequences <- sequences %>% filter(!sequence=="Sequence unavailable")
-sequences$coding <- NULL
 sequences_aa <- sequences_aa %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 protein_coding_transcripts <- protein_coding_transcripts %>% filter(ensembl_transcript_id %in% sequences$ensembl_transcript_id)
 

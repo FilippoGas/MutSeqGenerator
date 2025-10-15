@@ -38,10 +38,10 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                                 genotypes <- read.table(text = res, colClasses = "character")
                                 genotypes <- genotypes %>%
                                                 mutate(variant_type=str_split_i(V6, "\\|",2),
-                                                       protein_change=str_split_i(V6, "\\|",10)) %>%
+                                                       nucleotide_change=str_split_i(V6, "\\|",10)) %>%
                                                 dplyr::select(-c("V6")) %>% 
                                                 relocate(variant_type, .after = V5) %>% 
-                                                relocate(protein_change, .after = variant_type)
+                                                relocate(nucleotide_change, .after = variant_type)
                                 # Only keep unique columns (haplotypes)
                                 unique_gt <- t(unique(t(genotypes[,8:ncol(genotypes)])))
                                 genotypes <- cbind(genotypes[,1:7], unique_gt)
@@ -50,17 +50,17 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                                         
                                         # Subset genotype column to the current column and only retain variants with alternative alleles
                                         current_gt <- cbind(genotypes[,1:7],genotypes[,col])
-                                        colnames(current_gt) <- c("chr","pos","id","ref","alt","variant_type","protein_change","gt")
+                                        colnames(current_gt) <- c("chr","pos","id","ref","alt","variant_type","nucleotide_change","gt")
                                         current_gt <- current_gt %>% filter(!gt=="0|0")
                                         # If zero rows, return wt haplotype
                                         if (nrow(current_gt)==0) {
-                                                return(data.frame("ensembl_transcript_id"=transcript, "variants"="wt","rsid"="", "variant_types"="", "protein_change"=""))
+                                                return(data.frame("ensembl_transcript_id"=transcript, "variants"="wt","rsid"="", "variant_types"="", "nucleotide_change"=""))
                                         }else{
                                                 haplotype <- data.frame("ensembl_transcript_id"=character(),
                                                                         "variants"=character(),
                                                                         "rsid"=character(),
                                                                         "variant_types"=character(),
-                                                                        "protein_change"=character())
+                                                                        "nucleotide_change"=character())
                                                 for (allele in c(1,2)) {
                                                         hap <- current_gt %>% filter(str_split_i(gt,"\\|",allele)==1) %>% dplyr::select(-c(gt))
                                                         # If zero rows, haplotype is wild type
@@ -70,7 +70,7 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                                                                                               "variants"="wt",
                                                                                               "rsid"="",
                                                                                               "variant_types"="",
-                                                                                              "protein_change"=""))
+                                                                                              "nucleotide_change"=""))
                                                         }else{
                                                                 hap <- hap %>% dplyr::mutate(variants = paste0(chr,":",pos,".",ref,">",alt))
                                                                 haplotype <- rbind(haplotype,
@@ -78,7 +78,7 @@ res <- mclapply(unique(protein_coding_transcripts$ensembl_transcript_id),
                                                                                               "variants"=paste(hap$variants, collapse=","),
                                                                                               "rsid"=paste(hap$id, collapse=","),
                                                                                               "variant_types"=paste(hap$variant_type, collapse = ","),
-                                                                                              "protein_change"=paste(hap$protein_change, collapse = ",")))
+                                                                                              "nucleotide_change"=paste(hap$nucleotide_change, collapse = ",")))
                                                         }
                                                 }
                                                 return(haplotype)
@@ -107,7 +107,7 @@ haplotypes <- bind_rows(res)
 # Add gene id
 haplotypes <- haplotypes %>% 
                 left_join(protein_coding_transcripts %>%
-                                  dplyr::select(ensembl_gene_id, ensembl_transcript_id) %>%
+                                  dplyr::select(ensembl_gene_id, ensembl_transcript_id, hgnc_symbol) %>%
                                   unique()
                           )
 haplotypes <- haplotypes %>% relocate(ensembl_gene_id, .before = ensembl_transcript_id)

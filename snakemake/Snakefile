@@ -4,7 +4,7 @@ rule all:
     # Set output of last rule, or any independent rule (like download_wt_sequences) as input
     input:
         # sequences translation
-        expand(config["data_folder"]+"/haplotypes/haplotypes_aa_chr{chr}.csv", chr = range(1,23)),
+        expand(config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv", chr = range(1,23)),
         # transcripts annotations and sequences download
         config["wt_sequences"]+"/wt_cds.csv",
         config["wt_sequences"]+"/wt_aa.csv",

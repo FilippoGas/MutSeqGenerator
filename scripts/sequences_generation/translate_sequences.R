@@ -19,4 +19,4 @@ haplotype_ID$aa_sequence <- as.character(res)
 # Cut sequences after the first stop codon
 haplotype_ID <- haplotype_ID %>% mutate(aa_sequence = str_split_i(aa_sequence, "\\*",1))
 # Save result
-write_tsv(haplotype_ID, file = snakemake@output[[1]])
+write_csv(haplotype_ID, file = snakemake@output[[1]])

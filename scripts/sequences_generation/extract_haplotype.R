@@ -128,8 +128,8 @@ haplotypes <- haplotypes %>%
                 left_join(gene_id, by = join_by(ensembl_gene_id, variants)) %>% 
                 relocate(haplotype_gene_id, .after = ensembl_transcript_id) %>% 
                 mutate(haplotype_gene_id = ifelse(variants=="wt", paste0(ensembl_gene_id, ".", "0"), haplotype_gene_id))
-
 # Add strand annotation
 haplotypes <- haplotypes %>% left_join(protein_coding_transcripts %>% dplyr::select(ensembl_transcript_id, strand) %>% unique())
-
+# Add haplotype-transcript ID
+haplotypes <- haplotypes %>% mutate(haplotype_transcript_id = paste0(ensembl_transcript_id, "-", haplotype_gene_id))
 write_csv(haplotypes, file = snakemake@output[[1]])

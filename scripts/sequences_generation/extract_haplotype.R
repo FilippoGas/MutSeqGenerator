@@ -132,4 +132,5 @@ haplotypes <- haplotypes %>%
 haplotypes <- haplotypes %>% left_join(protein_coding_transcripts %>% dplyr::select(ensembl_transcript_id, strand) %>% unique())
 # Add haplotype-transcript ID
 haplotypes <- haplotypes %>% mutate(haplotype_transcript_id = paste0(ensembl_transcript_id, "-", haplotype_gene_id))
+haplotypes <- haplotypes %>% relocate(haplotype_transcript_id, .after = ensembl_transcript_id)
 write_csv(haplotypes, file = snakemake@output[[1]])

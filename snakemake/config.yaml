@@ -15,6 +15,7 @@ cancer_types: ["UVM","DLBC","ACC","BLCA","BRCA","CESC","CHOL","COAD","ESCA","GBM
 
 # PARALLEL CORES
 
-bcftools_threads: 2                   
+bcftools_threads: 2           
 extract_genotype_cores: 20               
 generate_sequences_cores: 20
+translate_sequences_cores: 10

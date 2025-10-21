@@ -4,6 +4,7 @@
 
 library(tidyverse)
 library(parallel)
+library(Biostrings)
 
 # FUNCTIONS
 
@@ -16,10 +17,14 @@ build_mutated_sequence <- function(wt_sequence, transcript_variants, haplotype) 
                                               'nucleotide_change' = strsplit(transcript_variants[1,"nucleotide_change"], ",")
                                               )
                                    )
+        # Keep track of start and stop codons alteration
+        start_gain <- FALSE; multiple_starts_in_5 <- FALSE; stop_loss_3_translated <- FALSE
         # Exclude intronic variants ('+' in nucleotide change)
-        variants <- variants %>% filter(!str_detect(nucleotide_change, "\\+"))
+        variants <- variants %>% dplyr::filter(!str_detect(nucleotide_change, "\\+"))
         # Filter variants in the 5' UTR
-        variants_5utr <- variants %>% filter(str_detect(nucleotide_change, "-"))
+        variants_5utr <- variants %>% dplyr::filter(str_detect(nucleotide_change, "-"))
+        # Remove variants that are not within the 5'utr
+        variants_5utr <- variants_5utr %>% dplyr::filter(pos<nchar(wt_sequence$`5utr`))
         # 5' UTR is only needed if a start codon is gained, so apply modification and check for 'ATG' in the resulting sequence
         if (nrow(variants_5utr)>0) {
                 # Get 5' UTR sequence
@@ -59,6 +64,8 @@ build_mutated_sequence <- function(wt_sequence, transcript_variants, haplotype) 
                         wt_starts <- wt_starts %>% mutate(wt_shifted_start = start + shift[start]) %>% dplyr::select(wt_shifted_start)
                         # Find the starts in the mutated sequence
                         starts <- as_data_frame(str_locate_all(utr5, "ATG")[[1]]) %>% dplyr::select(start)
+                        # Flag multiple starts
+                        multiple_starts_in_5 <- TRUE
                         #only keep those that are new
                         starts <- starts %>% left_join(wt_starts, join_by(start==wt_shifted_start), keep=TRUE)
                         starts <- starts %>% mutate(wt_shifted_start = ifelse(is.na(wt_shifted_start),0,wt_shifted_start)) %>% filter(!start==wt_shifted_start)
@@ -69,6 +76,8 @@ build_mutated_sequence <- function(wt_sequence, transcript_variants, haplotype) 
                                 utr5 <- str_sub(utr5, as.numeric(starts[1,"start"]), nchar(utr5))
                                 # Add 5utr to the sequence
                                 sequence <- utr5
+                                # flag start gain
+                                start_gain <- TRUE
                         } # ELSE nothing to do, 5' UTR do not need to be added to the sequence, move on with cds generation
                 }
         }
@@ -97,8 +106,8 @@ build_mutated_sequence <- function(wt_sequence, transcript_variants, haplotype) 
                 }
                 # Remove deletions placeholders
                 cds <- gsub("D","",cds)
-                # If the 5' UTR was added to te sequence, just add the cds part
-                if (nchar(sequence)>0) {
+                # If the 5' UTR was added to the sequence, just add the cds part
+                if (is_empty(sequence)) {
                         sequence <- paste0(sequence,cds)
                 }else{
                         # If 5'UTR was not used, find the fisrt start codon, cut the cds from there and add it to the sequence
@@ -108,15 +117,53 @@ build_mutated_sequence <- function(wt_sequence, transcript_variants, haplotype) 
                         }# If no start codon is found and 5' was not use, don't add anything to the sequence
                         
                 }
+        }else{  # If there are no variants in the CDS include it in the sequence without modifications
+                sequence <- paste0(sequence, wt_sequence$coding)
         }
-        # 3' UTR is only needed if a stop codon is lost and stop codons aren't gained
-        if (str_detect(transcript_variants$variant_types, "stop_lost") && !str_detect(transcript_variants$variant_types, "stop_gained")) {
-                # EDIT 3' AND ADD TO SEQUENCE
+        # 3' UTR is only needed if there are no stop codons in the sequence generated up to this point
+        if (!str_detect(as.character(translate(DNAString(sequence))), "\\*")) {
+                # Need to add 3'UTR
+                
+                # Flag 3' translation
+                stop_loss_3_translated <- TRUE
+                # Check if there are variants in the 3'UTR
+                variants_3utr <- variants %>% filter(str_detect(nucleotide_change, "\\*"))
+                if (nrow(variants_3utr)>0) {
+                        # Modify and add
+                        # Get cds sequence
+                        utr3 <- wt_sequence$`3utr`
+                        
+                        SNPs <- variants_3utr %>% filter(desc=="snp")
+                        DELs <- variants_3utr %>% filter(desc=="del")
+                        INs <- variants_3utr %>% filter(desc=="ins")
+                        
+                        # Apply SNPs first
+                        if (nrow(SNPs)>0) {
+                                utr3 <- apply_snp(utr3, SNPs, FALSE)
+                        }
+                        # Apply deletions
+                        if (nrow(DELs)>0) {
+                                utr3 <- apply_deletion(utr3, DELs, FALSE)
+                        }
+                        # Apply insertions
+                        if (nrow(INs)>0) {
+                                utr3 <- apply_insertion(utr3, INs, FALSE)
+                        }
+                        # Remove deletion placeholders
+                        utr3 <- gsub("D", "", utr3)
+                        # Add UTR to sequence
+                        sequence <- paste0(sequence, utr3)
+                }else{
+                        # Add without modifications
+                        sequence <- paste0(sequence, wt_sequence$`3utr`)
+                }
         }
         
-        # REMOVE DELETIONS PLACEHOLDERS
-        
-        return(sequence)
+        return(data.frame("nn_sequence" = sequence,
+                          "start_gain" = start_gain,
+                          "multiple_starts_in_5" = multiple_starts_in_5,
+                          "stop_loss_3_translated" = stop_loss_3_translated)
+               )
 }
 
 get_variant_df <- function(variants){
@@ -138,7 +185,7 @@ get_variant_df <- function(variants){
                         # Get variant position
                         pos <- str_split_i(str_split_i(variant$nucleotide_change, separator, 2), "del", 1)
                         if (is.na(pos)) { # (handling of 1 base deletions)
-                                separator <- str_sub(separator,2,2)
+                                separator <- get_separator(variant$nucleotide_change)
                                 pos <- str_split_i(str_split_i(variant$nucleotide_change, separator, 2), "del", 1)
                         }else{
                                 if(str_detect(variant$nucleotide_change, "-")){
@@ -171,10 +218,19 @@ get_variant_df <- function(variants){
                                           "desc"="ins"))
                 }else if (str_detect(variant$nucleotide_change, "dup")) {
                         # DUPLICATION (treat duplications as insertions)
-                        separator <- get_separator(variant$nucleotide_change)
-                        pos <- str_split_i(str_split_i(variant$nucleotide_change, separator, 2), "dup", 1)
                         ref <- ""
                         alt <- str_split_i(variant$nucleotide_change, "dup", 2)
+                        if(nchar(alt)>1){
+                                separator <- get_indel_separator(variant$nucleotide_change)
+                        }else{
+                                separator <- get_separator(variant$nucleotide_change)
+                        }
+                        pos <- str_split_i(str_split_i(variant$nucleotide_change, separator, 2), "dup", 1)
+                        if(str_detect(variant$nucleotide_change, "-")){
+                                pos <- as.numeric(pos) + as.numeric(nchar(alt)) -1
+                        }else{
+                                pos <- as.numeric(pos) - as.numeric(nchar(alt)) +1
+                        }
                         return(data.frame("variant_type"=variant$variant_types,
                                           "nucleotide_change"=variant$nucleotide_change,
                                           "pos"=as.numeric(pos),
@@ -204,31 +260,28 @@ get_variant_df <- function(variants){
 }
 
 compute_shift <- function(shift, INs, DELs){
-        
         # MANAGE INSERTIONS
         if(nrow(INs)>0){
                 for (IN in seq(1, nrow(INs))) {
                         
-                        if (str_detect(INs[IN,"nucleotide_change"],"-")) {
-                                start <- length(shift) - as.numeric(INs[IN,"pos"]) + 1
-                        }else{
-                                start <- as.numeric(INs[IN,"pos"])
-                        }
+                        start <- length(shift) - as.numeric(INs[IN,"pos"])
                         shift <- c(shift[1: start], shift[(start+1): (length(shift))]+rep(nchar(INs[IN, "alt"]), length(shift)-start))
                 }
         }
         # MANAGE DELETIONS
         if(nrow(DELs)>0){
                 for (DEL in seq(1, nrow(DELs))) {
-                        if (str_detect(DELs[DEL,"nucleotide_change"],"-")) {
-                                start <- length(shift) - as.numeric(DELs[DEL,"pos"]) + 1
-                        }else{
-                                start <- as.numeric(DELs[DEL,"pos"])
-                        }
+                        start <- length(shift) - as.numeric(DELs[DEL,"pos"])
                         end <-  start + nchar(DELs[DEL,"ref"]) + 1
-                        shift <- c(shift[1:start],
-                                   rep(NA, as.numeric(nchar(DELs[DEL,"ref"]))),
-                                   shift[end: length(shift)]-rep(nchar(DELs[DEL,"ref"]), length(shift)-end+1))
+                        # Check if deletion happens at the end of the sequence
+                        if (end > length(shift)) {
+                                shift <- c(shift[1:start],
+                                           rep(NA, as.numeric(nchar(DELs[DEL,"ref"]))))        
+                        }else{
+                                shift <- c(shift[1:start],
+                                           rep(NA, as.numeric(nchar(DELs[DEL,"ref"]))),
+                                           shift[end: length(shift)]-rep(nchar(DELs[DEL,"ref"]), length(shift)-end+1))
+                        }
                 }
         }
         return(shift)
@@ -309,8 +362,6 @@ apply_insertion <- function(sequence, INs, is_5_prime) {
 sequences <- read_csv(snakemake@input[["wt_cds"]])
 protein_coding_transcripts <- read_csv(snakemake@input[["annotations"]])
 haplotype_ID <- read_csv(snakemake@input[["haplotypes"]])
-# Make unique id for transcript-haplotype gene ID
-haplotype_ID <- haplotype_ID %>% mutate(haplotype_transcript_id = paste0(ensembl_transcript_id, "-", haplotype_gene_id))
 haplotype_ID <- haplotype_ID %>% column_to_rownames("haplotype_transcript_id")
 # Extract chromosome name from haplotype filename and read threads from snakemake
 chr <- snakemake@input[["haplotypes"]] %>% str_split_i(pattern = "chr", 2) %>% str_split_i(pattern = ".csv", 1)
@@ -323,23 +374,30 @@ sequences <- sequences %>% filter(ensembl_transcript_id %in% unique(protein_codi
 # Use ensembl transcript id as rowname
 sequences <- sequences %>% column_to_rownames(var = "ensembl_transcript_id")
 res <- mclapply(rownames(haplotype_ID), FUN = function(haplotype){
-        
-        # Only compute sequence if haplotype is not wt
-        data.frame("haplotype_transcript_id"=haplotype,
-                   "nn_sequence"=ifelse(!str_detect(haplotype, "\\.0"),
-                                        build_mutated_sequence(sequences[str_split_i(haplotype, "\\-", 1),],
-                                                               haplotype_ID[haplotype, c("variant_types", "nucleotide_change")],
-                                                               haplotype),
-                                        sequences[str_split_i(haplotype, "\\-", 1),"coding"]
-                                        )
-                   )
+                # Only compute sequence if haplotype is not wt
+                if(!str_detect(haplotype, "\\.0")){
+                        return(cbind(data.frame("haplotype_transcript_id" = haplotype),
+                                     build_mutated_sequence(sequences[str_split_i(haplotype, "\\-", 1),],
+                                                            haplotype_ID[haplotype, c("variant_types", "nucleotide_change")],
+                                                            haplotype
+                                                            )
+                                     )
+                               )
+                }else{
+                        return(data.frame("haplotype_transcript_id" = haplotype,
+                                          "nn_sequence" = sequences[str_split_i(haplotype, "\\-", 1),"coding"],
+                                          "start_gain" = FALSE,
+                                          "multiple_starts_in_5" = FALSE,
+                                          "stop_loss_3_translated" = FALSE)
+                               )
+                }
         },
         mc.preschedule = TRUE,
         mc.cores = cores,
-        mc.cleanup = TRUE
+        mc.cleanup = FALSE
 )
 res <- bind_rows(res)
 
-haplotype_ID <- haplotype_ID %>% rownames_to_column(var = "haplotype_transcript_id") %>% left_join(res)
+haplotype_ID <- haplotype_ID %>% rownames_to_column(var = "haplotype_transcript_id") %>% left_join(res) %>% relocate(nn_sequence, .after = stop_loss_3_translated)
 
 write_csv(haplotype_ID, file = snakemake@output[[1]])

@@ -4,7 +4,7 @@ rule all:
     # Set output of last rule, or any independent rule (like download_wt_sequences) as input
     input:
         # sequences translation
-        expand(config["data_folder"]+"/haplotypes/haplotypes_sequences_chr{chr}.csv", chr = range(1,23)),
+        expand(config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv", chr = range(1,23)),
         # genotypes
         expand(config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv", chr = range(1,23)),
         # transcripts annotations and sequences download
@@ -197,7 +197,7 @@ rule extract_haplotypes:
         samples = config["data_folder"]+"/phased_vcf/samples.txt"
     threads: config["extract_haplotypes_cores"]
     output:
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+        haplotypes = temp(config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv")
     conda:
         "../envs/Renv.yaml"
     script:
@@ -208,7 +208,7 @@ rule genotypes:
         phased_vcf = config["data_folder"]+"/phased_vcf/chr{chr}.phased.ann.vcf.gz",
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv",
         samples = config["data_folder"]+"/phased_vcf/samples.txt",
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv"
     threads: config["extract_genotypes_cores"]
     output:
         config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv"
@@ -222,7 +222,7 @@ rule generate_sequences:
     input:
         wt_cds = config["wt_sequences"]+"/wt_cds.csv",
         annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv",
-        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv"
     output:
         temp(config["data_folder"]+"/haplotypes/haplotypes_nn_chr{chr}.csv")
     threads: config["generate_sequences_cores"]
@@ -236,13 +236,24 @@ rule translate_sequences:
     input:
         haplotypes = config["data_folder"]+"/haplotypes/haplotypes_nn_chr{chr}.csv"
     output:
-        config["data_folder"]+"/haplotypes/haplotypes_sequences_chr{chr}.csv"
+        temp(config["data_folder"]+"/haplotypes/haplotypes_aa_chr{chr}.csv")
     threads: config["translate_sequences_cores"]
     conda:
         "../envs/Renv.yaml"
     script:
         "../scripts/sequences_generation/translate_sequences.R"
 
+# Compute haplotype frequency
+rule compute_frequency:
+    input:
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_aa_chr{chr}.csv",
+        genotypes = config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv"
+    output:
+        config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
+    conda:
+        "../envs/Renv.yaml"
+    script:
+        "../scripts/sequences_generation/compute_frequencies.R"
 
 ######### SCORE GENERATION ######################
 #   At this point use haplotype   sequences     #

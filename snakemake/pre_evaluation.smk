@@ -1,21 +1,16 @@
 configfile: "config.yaml"
 
-def get_transcripts_name(path_to_file):
-    with open(path_to_file, "r") as f:
-        names = [line.strip() for line in f]
-    return names
-
 rule all:
     # Set output of last rule, or any independent rule (like download_wt_sequences) as input
     input:
-        # download_wt_sequences is independent from any other rule. It always needs to be in rule all.
-        config["wt_sequences"]+"/wt_cds.RData",
-        config["wt_sequences"]+"/wt_aa.RData",
-        config["wt_sequences"]+"/protein_coding_transcripts.RData",
-        config["wt_sequences"]+"/transcripts_name.txt",
-        # Prepare_sequences_for_ESM
-        expand(config["data_folder"]+"/tumors/{cancer_type}/ESM_inputs/chr{chr}.txt",cancer_type=config["cancer_types"], chr=range(1,23))
-
+        # sequences translation
+        expand(config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv", chr = range(1,23)),
+        # genotypes
+        expand(config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv", chr = range(1,23)),
+        # transcripts annotations and sequences download
+        config["wt_sequences"]+"/wt_cds.csv",
+        config["wt_sequences"]+"/wt_aa.csv",
+        config["wt_sequences"]+"/protein_coding_transcripts.csv"
 
 # Filter variants botg in the SNP and INDEL vcf files, only keeping variants with a recalibrated variant quality score
 # above 99.9
@@ -81,7 +76,7 @@ rule merge_tumors:
         index = expand(config["data_folder"]+"/tumors/{cancer_type}/temp/concatenated_vcf/{cancer_type}.snp.indel.vcf.gz.tbi", cancer_type = config["cancer_types"])
     output:
         temp(config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz")
-    threads: config["threads"]
+    threads: config["bcftools_threads"]
     shell:
         "bcftools merge --threads {threads} {input.vcf} -Oz -o {output}"
 
@@ -91,7 +86,7 @@ rule index_merged_tumors:
         rules.merge_tumors.output
     output:
         temp(config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz.tbi")
-    threads: config["threads"]
+    threads: config["bcftools_threads"]
     shell:
         "bcftools index -t {input}"
 
@@ -101,7 +96,7 @@ rule split_chromosomes:
         vcf = config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz",
         index = config["data_folder"]+"/temp/merged_vcf/all_samples_all_cancers.vcf.gz.tbi"
     output:
-        config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz"
+        temp(config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz")
     shell:
         "bcftools view --regions chr{wildcards.chr} {input.vcf} -Oz -o {output}"
 
@@ -111,7 +106,7 @@ rule index_chromosome_vcf:
     input:
         rules.split_chromosomes.output
     output:
-        config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz.tbi"
+        temp(config["data_folder"]+"/temp/vcf_per_chromosome/chr{chr}.vcf.gz.tbi")
     shell:
         "bcftools  index -t {input}"
 
@@ -123,22 +118,31 @@ rule phasing:
         map = config["recombination_maps"] + "/chr{chr}.b38.gmap.gz",
         indexes = rules.index_chromosome_vcf.output
     output:
-        bcf = config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf",
-        index = config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf.csi"
+        bcf = config["data_folder"]+"/phased_vcf/chr{chr}.phased.bcf",
+        index = config["data_folder"]+"/phased_vcf/chr{chr}.phased.bcf.csi"
     threads:1
-    resources: 
-        mem_mb = lambda wildcards, attempt: round(10240 * 1.5 * attempt)
+    resources:
+        load = 1 # Set max load to 1 or 2 from command line call
     shell:  
         # Map files name MUST be in the format "chr#.[genome_version].gmap.gz (i.e. "chr2.b38.gmap.gz")"
         config["shapeit5"] + " --input {input.vcf} --region $(echo '{input.map}' | cut -d '.' -f 1 | awk -F '/' '{{print $NF}}') --map {input.map} --filter-maf 0.01 --output {output.bcf} --thread {threads}"
 
 rule phased_bcf_to_vcf:
     input:
-        config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.bcf"
+        config["data_folder"]+"/phased_vcf/chr{chr}.phased.bcf"
     output:
-        config["data_folder"]+"/temp/phased_vcf/chr{chr}.phased.vcf.gz"
+        config["data_folder"]+"/phased_vcf/chr{chr}.phased.vcf.gz"
     shell:
-        "bcftools view {input} -Oz -o {output}"
+        "bcftools view {input} -Oz -o {output} && bcftools index {output}"
+
+# Extract samples list for each phased vcf
+rule samples_phased_vcf:
+    input:
+        config["data_folder"]+"/phased_vcf/chr22.phased.vcf.gz"
+    output:
+        config["data_folder"]+"/phased_vcf/samples.txt"
+    shell:
+        "bcftools query -l {input} > {output}"
 
 # Sample lists are needed to split back vcf files per cancer type
 #
@@ -176,65 +180,85 @@ rule index_phased_vcf:
 # Download wild type sequences and annotations for protein coding genes
 rule download_wt_sequences:
     conda:
-	    "envs/Renv.yaml"	
+	    "../envs/Renv.yaml"	
     output:
-        sequences = config["wt_sequences"]+"/wt_cds.RData",
-        sequences_aa = config["wt_sequences"]+"/wt_aa.RData",
-        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
-        names = config["wt_sequences"]+"/transcripts_name.txt"
+        sequences = config["wt_sequences"]+"/wt_cds.csv",
+        sequences_aa = config["wt_sequences"]+"/wt_aa.csv",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv"
     script:
-        "sequences_generation/sequences_download.R"
+        "../scripts/sequences_generation/sequences_download.R"
+
+# Given the phased vcf, and the trancripts of interest just downloaded, extract all 
+# the genotypes present in the population
+rule extract_haplotypes:
+    input:
+        phased_vcf = config["data_folder"]+"/phased_vcf/chr{chr}.phased.ann.vcf.gz",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv",
+        samples = config["data_folder"]+"/phased_vcf/samples.txt"
+    threads: config["extract_haplotypes_cores"]
+    output:
+        haplotypes = temp(config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv")
+    conda:
+        "../envs/Renv.yaml"
+    script:
+        "../scripts/sequences_generation/extract_haplotype.R"
+
+rule genotypes:
+    input:
+        phased_vcf = config["data_folder"]+"/phased_vcf/chr{chr}.phased.ann.vcf.gz",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv",
+        samples = config["data_folder"]+"/phased_vcf/samples.txt",
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv"
+    threads: config["extract_genotypes_cores"]
+    output:
+        config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv"
+    conda:
+        "../envs/Renv.yaml"
+    script:
+        "../scripts/sequences_generation/genotype.R"
 
 
-# Generate mutated nucleotide sequences for each chromosome
-#
-# WARNING: the path of the output file is used in translate_sequences.R to extract
-#          cancer type and chromosome. If the path is changed modify the R script 
-#          accordingly.
 rule generate_sequences:
     input:
-        wt_cds = config["wt_sequences"]+"/wt_cds.RData",
-        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
-        samples_list = rules.get_sample_lists_per_cancer_type.output,
-        vcf = rules.split_cancer_types.output,
-        index = rules.index_phased_vcf.output
+        wt_cds = config["wt_sequences"]+"/wt_cds.csv",
+        annotations = config["wt_sequences"]+"/protein_coding_transcripts.csv",
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_no_seq_chr{chr}.csv"
     output:
-        config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/nn/chr{chr}.RData"
+        temp(config["data_folder"]+"/haplotypes/haplotypes_nn_chr{chr}.csv")
+    threads: config["generate_sequences_cores"]
     conda:
-        "envs/Renv.yaml"
+        "../envs/Renv.yaml"
     script:
-        "sequences_generation/mutated_sequences.R"
-
+        "../scripts/sequences_generation/mutated_sequences.R"
 
 # Translate the mutated nucleotide sequences
 rule translate_sequences:
     input:
-        wt_cds = config["wt_sequences"]+"/wt_cds.RData",
-        annotations = config["wt_sequences"]+"/protein_coding_transcripts.RData",
-        mutated_cds = rules.generate_sequences.output
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_nn_chr{chr}.csv"
     output:
-        config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
+        temp(config["data_folder"]+"/haplotypes/haplotypes_aa_chr{chr}.csv")
+    threads: config["translate_sequences_cores"]
     conda:
-        "envs/Renv.yaml"
+        "../envs/Renv.yaml"
     script:
-        "sequences_generation/translate_sequences.R"
+        "../scripts/sequences_generation/translate_sequences.R"
 
-
-# Prepare sequences for ESM evaluation. For each cancer type, generates one csv for 
-# each transcript containing its unique haplotypes.
-#
-# This output is fake, it's needed to trick snakemake into thinking that there is a 1-1 
-# relationship between input and output. Internally the scripts is actually saving more output
-# for each input, and only at the end generates the temporary output required by snakemake.
-rule prepare_esm_input:
-    input:  
-        config["data_folder"]+"/tumors/{cancer_type}/mutated_sequences/aa/chr{chr}.RData"
+# Compute haplotype frequency
+rule compute_frequency:
+    input:
+        haplotypes = config["data_folder"]+"/haplotypes/haplotypes_aa_chr{chr}.csv",
+        genotypes = config["data_folder"]+"/genotypes/genotypes_chr{chr}.csv"
     output:
-        # Inside the R script the name of the transcript is attached to this path, this fake 
-        # is needed to create the ESM_inputs directory before R start.
-        temp(config["data_folder"]+"/tumors/{cancer_type}/ESM_inputs/chr{chr}.txt")
+        config["data_folder"]+"/haplotypes/haplotypes_chr{chr}.csv"
     conda:
-        "envs/Renv.yaml"
+        "../envs/Renv.yaml"
     script:
-        "sequences_evaluation/prepare_sequences_for_ESM.R"
+        "../scripts/sequences_generation/compute_frequencies.R"
 
+######### SCORE GENERATION ######################
+#   At this point use haplotype   sequences     #
+#   as input for PLM scoring, place the scores  #
+#   in data_folder/scores named as              #
+#   haplotype_scores_chr#.csv and continue with #
+#   post_evaluation.smk                         #
+#################################################

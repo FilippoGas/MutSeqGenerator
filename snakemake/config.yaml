@@ -13,5 +13,10 @@ variant_types: ["snp", "indel"]
 cancer_types: ["UVM","DLBC","ACC","BLCA","BRCA","CESC","CHOL","COAD","ESCA","GBM","HNSC","KICH","KIRC","KIRP","LAML","LGG","LIHC","LUAD","LUSC","MESO","OV","PAAD","PCPG","PRAD","READ","SARC","SKCM","STAD","TGCT","THCA","THYM","UCEC","UCS"]
 # "UVM","DLBC","ACC","BLCA","BRCA","CESC","CHOL","COAD","ESCA","GBM","HNSC","KICH","KIRC","KIRP","LAML","LGG","LIHC","LUAD","LUSC","MESO","OV","PAAD","PCPG","PRAD","READ","SARC","SKCM","STAD","TGCT","THCA","THYM","UCEC","UCS"
 
-# VARIABLES
-threads: 2
+# PARALLEL CORES
+
+bcftools_threads: 2           
+extract_haplotypes_cores: 20
+extract_genotypes_cores: 20               
+generate_sequences_cores: 20
+translate_sequences_cores: 20
